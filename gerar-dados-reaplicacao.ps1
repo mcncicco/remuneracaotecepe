@@ -7,16 +7,28 @@ param(
 
 $roleColumn = 'Cargo / ' + [char]0x00C1 + 'rea'
 $registrationColumn = 'Inscri' + [char]0x00E7 + [char]0x00E3 + 'o'
+$statusColumn = 'Situa' + [char]0x00E7 + [char]0x00E3 + 'o'
 $objective = @(Import-Csv -LiteralPath $ObjetivaCsv -Delimiter ';' -Encoding UTF8)
 $written = @(Import-Csv -LiteralPath $DiscursivaCsv -Delimiter ';' -Encoding UTF8)
-if ($objective.Count -eq 0 -or $written.Count -eq 0 -or $objective[0].PSObject.Properties.Name -notcontains $roleColumn -or $written[0].PSObject.Properties.Name -notcontains $roleColumn -or $objective[0].PSObject.Properties.Name -notcontains $registrationColumn -or $written[0].PSObject.Properties.Name -notcontains $registrationColumn -or $objective[0].PSObject.Properties.Name -notcontains 'Nota objetiva' -or $written[0].PSObject.Properties.Name -notcontains 'Nota discursiva') {
+if ($objective.Count -eq 0 -or $written.Count -eq 0 -or $objective[0].PSObject.Properties.Name -notcontains $roleColumn -or $written[0].PSObject.Properties.Name -notcontains $roleColumn -or $objective[0].PSObject.Properties.Name -notcontains $registrationColumn -or $written[0].PSObject.Properties.Name -notcontains $registrationColumn -or $objective[0].PSObject.Properties.Name -notcontains $statusColumn -or $written[0].PSObject.Properties.Name -notcontains $statusColumn -or $objective[0].PSObject.Properties.Name -notcontains 'Nota objetiva' -or $written[0].PSObject.Properties.Name -notcontains 'Nota discursiva') {
     throw 'Os CSVs estao vazios ou nao possuem as colunas necessarias.'
+}
+
+function ConvertTo-DisplayStatus([string]$Status) {
+    switch -Regex ($Status.Trim()) {
+        '^Aprovado$' { return 'Aprovado' }
+        '^Aprovado\s+PcD$' { return 'Aprovado PCD' }
+        '^Aprovado\s+Negro$' { return 'Aprovado Negro' }
+        '^Aprovado\s+PcD\s+Negro$' { return 'Aprovado PCD/Negro' }
+        default { throw 'Situacao de aprovacao nao reconhecida.' }
+    }
 }
 
 $objectiveById = @{}
 foreach ($entry in $objective) {
     $registration = $entry.$registrationColumn.Trim()
     if (-not $registration -or $objectiveById.ContainsKey($registration)) { throw 'Inscricao vazia ou duplicada na objetiva.' }
+    $null = ConvertTo-DisplayStatus $entry.$statusColumn
     $objectiveById[$registration] = $entry
 }
 $writtenById = @{}
@@ -24,7 +36,7 @@ foreach ($entry in $written) {
     $registration = $entry.$registrationColumn.Trim()
     if (-not $registration -or $writtenById.ContainsKey($registration) -or -not $objectiveById.ContainsKey($registration)) { throw 'Inscricao da discursiva vazia, duplicada ou ausente na objetiva.' }
     $original = $objectiveById[$registration]
-    if ($entry.$roleColumn -ne $original.$roleColumn -or $entry.Nome -cne $original.Nome -or $entry.Nascimento -ne $original.Nascimento) { throw 'Dados divergentes entre objetiva e discursiva.' }
+    if ($entry.$roleColumn -ne $original.$roleColumn -or $entry.Nome -cne $original.Nome -or $entry.Nascimento -ne $original.Nascimento -or (ConvertTo-DisplayStatus $entry.$statusColumn) -cne (ConvertTo-DisplayStatus $original.$statusColumn)) { throw 'Dados divergentes entre objetiva e discursiva.' }
     $writtenById[$registration] = $entry
 }
 
@@ -44,7 +56,8 @@ $data = @(
                     if (-not [decimal]::TryParse($writtenById[$registration].'Nota discursiva', [System.Globalization.NumberStyles]::Number, $culture, [ref]$value) -or $value -lt 0 -or $value -gt 20) { throw 'Nota discursiva invalida.' }
                     $writtenScore = $value
                 }
-                [pscustomobject]@{ classificacao = $null; nome = $entry.Nome; nascimento = $entry.Nascimento; objetiva = $score; discursiva = $writtenScore; titulos = $null; final = $null }
+                $status = ConvertTo-DisplayStatus $entry.$statusColumn
+                [pscustomobject]@{ classificacao = $null; nome = $entry.Nome; nascimento = $entry.Nascimento; objetiva = $score; discursiva = $writtenScore; titulos = $null; final = $null; situacao = $status }
             }
         )
         [pscustomobject]@{ cargo = $career.Name; fase = 'reaplicacao'; resultados = $results }

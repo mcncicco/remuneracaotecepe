@@ -2,6 +2,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const { calculate } = require('./classificacao-concurso.js');
+const statuses = new Set(['Aprovado', 'Aprovado PCD', 'Aprovado PCD/Negro', 'Aprovado Negro']);
+const countStatuses = results => results.reduce((counts, result) => {
+  counts[result.situacao] = (counts[result.situacao] || 0) + 1;
+  return counts;
+}, {});
 
 const sample = [
   { nascimento: '01/01/2000', objetiva: 60, discursiva: 18.5 },
@@ -22,10 +27,17 @@ for (const career of data) {
     assert.equal(result.classificacao, index + 1);
     assert.ok(result.nome && Number.isFinite(result.objetiva) && Number.isFinite(result.discursiva) && Number.isFinite(result.final));
     assert.match(result.nascimento, /^\d{2}\/\d{2}\/\d{4}$/);
-    assert.deepEqual(Object.keys(result).sort(), ['classificacao', 'discursiva', 'final', 'nascimento', 'nome', 'objetiva', 'titulos']);
+    assert.ok(statuses.has(result.situacao));
+    assert.deepEqual(Object.keys(result).sort(), ['classificacao', 'discursiva', 'final', 'nascimento', 'nome', 'objetiva', 'situacao', 'titulos']);
     assert.equal(result.titulos === null, !career.cargo.startsWith('PROCURADOR'));
   });
 }
+assert.deepEqual(countStatuses(data.flatMap(career => career.resultados)), {
+  Aprovado: 433,
+  'Aprovado Negro': 47,
+  'Aprovado PCD': 27,
+  'Aprovado PCD/Negro': 2
+});
 assert.equal(data[0].resultados[0].nome, 'Washington Luis Galdina de Souza');
 assert.equal(data[0].resultados[0].final, 80);
 assert.equal(data[5].resultados[0].nome, 'Roberta Gouveia de Rezende Pereira');
@@ -51,7 +63,8 @@ for (const career of reapplication) {
     assert.equal(result.titulos, null);
     assert.equal(result.final, null);
     assert.match(result.nascimento, /^\d{2}\/\d{2}\/\d{4}$/);
-    assert.deepEqual(Object.keys(result).sort(), ['classificacao', 'discursiva', 'final', 'nascimento', 'nome', 'objetiva', 'titulos']);
+    assert.ok(statuses.has(result.situacao));
+    assert.deepEqual(Object.keys(result).sort(), ['classificacao', 'discursiva', 'final', 'nascimento', 'nome', 'objetiva', 'situacao', 'titulos']);
   });
   const calculated = calculate(career.resultados);
   const scored = calculated.filter(result => result.discursiva !== null);
@@ -68,5 +81,35 @@ for (const career of reapplication) {
   });
   expected.delete(career.cargo);
 }
+assert.deepEqual(countStatuses(reapplication.flatMap(career => career.resultados)), {
+  Aprovado: 2515,
+  'Aprovado Negro': 663,
+  'Aprovado PCD': 173,
+  'Aprovado PCD/Negro': 54
+});
 assert.equal(expected.size, 0);
+
+const appointments = vm.runInNewContext(`${fs.readFileSync('nomeacoes-concurso.js', 'utf8')}\nappointedCandidates`);
+const officialCandidates = new Set(data.flatMap(career => career.resultados.map(result => `${career.cargo}|${result.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR')}`)));
+assert.equal(appointments.length, 41);
+assert.equal(new Set(appointments.map(appointment => `${appointment.cargo}|${appointment.nome}`)).size, appointments.length);
+appointments.forEach(appointment => {
+  assert.equal(appointment.fase, 'concurso');
+  assert.ok(appointment.portaria);
+  assert.ok(officialCandidates.has(`${appointment.cargo}|${appointment.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR')}`));
+});
+const vacancies = vm.runInNewContext(`${fs.readFileSync('vagas-concurso.js', 'utf8')}\nvacancyData`);
+assert.equal(vacancies.length, 10);
+assert.deepEqual(vacancies.reduce((totals, vacancy) => ({
+  total: totals.total + vacancy.vagas_quadro_total,
+  ampla: totals.ampla + vacancy.vagas_quadro_ac,
+  pcd: totals.pcd + vacancy.vagas_quadro_pcd,
+  negro: totals.negro + vacancy.vagas_quadro_ppp
+}), { total: 0, ampla: 0, pcd: 0, negro: 0 }), { total: 61, ampla: 43, pcd: 6, negro: 12 });
+assert.deepEqual(vacancies.reduce((totals, vacancy) => ({
+  total: totals.total + vacancy.edital_total_sem_cr,
+  ampla: totals.ampla + vacancy.edital_vagas_ac,
+  pcd: totals.pcd + vacancy.edital_vagas_pcd,
+  negro: totals.negro + vacancy.edital_vagas_negros
+}), { total: 0, ampla: 0, pcd: 0, negro: 0 }), { total: 59, ampla: 36, pcd: 10, negro: 13 });
 console.log('Resultados do concurso verificados.');

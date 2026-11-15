@@ -372,13 +372,65 @@ functionsNext.addEventListener('click', () => { functionsPage++; renderFunctions
 renderFunctions();
 
 const contestCareer = document.querySelector('#contest-career');
+const contestStatus = document.querySelector('#contest-status');
 const contestSearch = document.querySelector('#contest-search');
 const contestBody = document.querySelector('#contest-body');
 const contestPrev = document.querySelector('#contest-prev');
 const contestNext = document.querySelector('#contest-next');
 const contestScoreFormat = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
 let contestPage = 0;
-const contestCareers = [...contestData, ...contestReapplicationData.map(career => ({ ...career, resultados: ContestRanking.calculate(career.resultados) }))];
+const contestCareers = [
+  ...contestData.map(career => ({ ...career, fase: 'concurso', resultados: career.resultados.map(result => ({ ...result })) })),
+  ...contestReapplicationData.map(career => ({ ...career, resultados: ContestRanking.calculate(career.resultados) }))
+];
+const normalizeContestName = name => name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR');
+const normalizeContestKey = value => normalizeContestName(value).replace(/[^A-Z0-9]+/g, ' ').trim();
+const appointmentKey = appointment => `${appointment.fase}|${appointment.cargo}|${normalizeContestName(appointment.nome)}`;
+const appointmentsByCandidate = new Map(appointedCandidates.map(appointment => [appointmentKey(appointment), appointment]));
+const vacancyPools = [
+  { field: 'vagas_quadro_ac', editalField: 'edital_vagas_ac', label: 'Ampla', statuses: new Set(['Aprovado']) },
+  { field: 'vagas_quadro_pcd', editalField: 'edital_vagas_pcd', label: 'PCD', statuses: new Set(['Aprovado PCD', 'Aprovado PCD/Negro']) },
+  { field: 'vagas_quadro_ppp', editalField: 'edital_vagas_negros', label: 'Negro/PPP', statuses: new Set(['Aprovado Negro', 'Aprovado PCD/Negro']) }
+];
+const vacancyTypesByCandidate = new Map();
+
+vacancyData.forEach(vacancy => {
+  const specialty = vacancy.especialidade === '—' ? '' : vacancy.especialidade;
+  const vacancyCareer = contestCareers.find(career => normalizeContestKey(career.cargo) === normalizeContestKey(`${vacancy.cargo} ${specialty}`));
+  if (!vacancyCareer) throw new Error(`Cargo sem correspondencia para as vagas: ${vacancy.cargo} / ${vacancy.especialidade}.`);
+
+  vacancyPools.forEach(pool => {
+    const count = vacancy[pool.field];
+    const editalCount = vacancy[pool.editalField];
+    if (!Number.isInteger(count) || count < 0) throw new Error(`Quantidade invalida de vagas: ${pool.field}.`);
+    if (!Number.isInteger(editalCount) || editalCount < 0) throw new Error(`Quantidade invalida de vagas: ${pool.editalField}.`);
+    if (!count) return;
+    const eligible = vacancyCareer.resultados
+      .filter(result => Number.isFinite(result.classificacao) && pool.statuses.has(result.situacao) && !appointmentsByCandidate.has(appointmentKey({ fase: vacancyCareer.fase, cargo: vacancyCareer.cargo, nome: result.nome })))
+      .sort((first, second) => first.classificacao - second.classificacao);
+    const currentBoundary = eligible[Math.min(count, eligible.length) - 1];
+    const editalBoundary = eligible[Math.min(count, editalCount, eligible.length) - 1];
+    if (!currentBoundary) return;
+    eligible.filter(result => result.classificacao <= currentBoundary.classificacao).forEach(result => {
+      const key = appointmentKey({ fase: vacancyCareer.fase, cargo: vacancyCareer.cargo, nome: result.nome });
+      if (!vacancyTypesByCandidate.has(key)) vacancyTypesByCandidate.set(key, { types: [], editalTypes: [], additionalTypes: [] });
+      const candidateVacancies = vacancyTypesByCandidate.get(key);
+      if (!candidateVacancies.types.includes(pool.label)) candidateVacancies.types.push(pool.label);
+      const typeGroup = editalBoundary && result.classificacao <= editalBoundary.classificacao
+        ? candidateVacancies.editalTypes
+        : candidateVacancies.additionalTypes;
+      if (!typeGroup.includes(pool.label)) typeGroup.push(pool.label);
+    });
+  });
+});
+
+contestCareers.forEach(career => career.resultados.forEach(result => {
+  const key = appointmentKey({ fase: career.fase, cargo: career.cargo, nome: result.nome });
+  const candidateVacancies = vacancyTypesByCandidate.get(key);
+  result.vaga = candidateVacancies ? candidateVacancies.types.join(' / ') : '';
+  result.vagaEdital = candidateVacancies ? candidateVacancies.editalTypes : [];
+  result.vagaAdicional = candidateVacancies ? candidateVacancies.additionalTypes : [];
+}));
 
 contestCareers.forEach((career, index) => {
   const option = document.createElement('option');
@@ -394,7 +446,9 @@ const sortContest = createStatisticsSorter(document.querySelector('.competition-
   { value: row => row.objetiva, numeric: true },
   { value: row => row.discursiva, numeric: true },
   { value: row => row.titulos, numeric: true },
-  { value: row => row.final, numeric: true }
+  { value: row => row.final, numeric: true },
+  { value: row => row.situacao },
+  { value: row => row.vaga }
 ], 0, () => { contestPage = 0; renderContest(); }, 1);
 
 function renderContest() {
@@ -409,15 +463,30 @@ function renderContest() {
   headers[4].querySelector('button').textContent = isReapplication ? 'DISCURSIVA PRELIMINAR' : 'DISCURSIVA';
   headers[6].querySelector('button').textContent = isReapplication ? 'NOTA FINAL ESTIMADA' : 'NOTA FINAL';
   document.querySelector('#contest-stage').textContent = isReapplication
-    ? 'Reaplicação: nota final e colocação estimadas pela soma das notas, com desempate por idade. Não são classificação oficial, não consideram cotas ou outros critérios e podem mudar após recursos; candidatos sem nota da discursiva não são classificados.'
+    ? 'Reaplicação: nota final e colocação estimadas pela soma das notas, com desempate por idade. Não são classificação oficial, não consideram cotas ou outros critérios e podem mudar após recursos; candidatos sem nota da discursiva não são classificados. A situação exibida vem da lista da objetiva definitiva.'
     : 'Resultado final com homologação parcial, conforme documento fornecido de 1º de setembro de 2026.';
-  const filtered = sortContest(career.resultados.filter(row => row.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR').includes(query)));
+  const selectedStatuses = contestStatus.value === 'Aprovado PCD' || contestStatus.value === 'Aprovado Negro'
+    ? [contestStatus.value, 'Aprovado PCD/Negro']
+    : contestStatus.value ? [contestStatus.value] : null;
+  const filtered = sortContest(career.resultados.filter(row => (!selectedStatuses || selectedStatuses.includes(row.situacao)) && row.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR').includes(query)));
   const pages = Math.max(1, Math.ceil(filtered.length / positionsPageSize));
   contestPage = Math.min(contestPage, pages - 1);
   contestBody.replaceChildren();
   filtered.slice(contestPage * positionsPageSize, (contestPage + 1) * positionsPageSize).forEach(item => {
     const row = document.createElement('tr');
-    [item.classificacao === null ? '—' : `${item.classificacao}º`, item.nome, item.nascimento, contestScoreFormat.format(item.objetiva), item.discursiva === null ? '—' : contestScoreFormat.format(item.discursiva), item.titulos === null ? '—' : contestScoreFormat.format(item.titulos), item.final === null ? '—' : contestScoreFormat.format(item.final)].forEach((value, index) => {
+    const appointment = appointmentsByCandidate.get(appointmentKey({ fase: career.fase || 'concurso', cargo: career.cargo, nome: item.nome }));
+    if (appointment) {
+      row.classList.add('appointed');
+      row.title = `Nomeado por ${appointment.portaria}`;
+    } else if (item.vaga) {
+      row.classList.add(item.vagaEdital.length ? 'vacancy-edital' : 'vacancy-eligible');
+      const vacancyDetails = [
+        item.vagaEdital.length ? `edital: ${item.vagaEdital.join(', ')}` : '',
+        item.vagaAdicional.length ? `quadro atual além do edital: ${item.vagaAdicional.join(', ')}` : ''
+      ].filter(Boolean).join('; ');
+      row.title = `Não nomeado; dentro do quantitativo (${vacancyDetails}).`;
+    }
+    [item.classificacao === null ? '—' : `${item.classificacao}º`, item.nome, item.nascimento, contestScoreFormat.format(item.objetiva), item.discursiva === null ? '—' : contestScoreFormat.format(item.discursiva), item.titulos === null ? '—' : contestScoreFormat.format(item.titulos), item.final === null ? '—' : contestScoreFormat.format(item.final), item.situacao, item.vaga || '—'].forEach((value, index) => {
       const cell = document.createElement('td');
       if (!hasTitles && index === 5) cell.hidden = true;
       cell.textContent = value;
@@ -428,7 +497,7 @@ function renderContest() {
   if (!filtered.length) {
     const row = document.createElement('tr');
     const cell = document.createElement('td');
-    cell.colSpan = hasTitles ? 7 : 6;
+    cell.colSpan = hasTitles ? 9 : 8;
     cell.textContent = 'Nenhum resultado encontrado.';
     row.append(cell);
     contestBody.append(row);
@@ -444,6 +513,7 @@ contestCareer.addEventListener('input', () => {
   sortContest.set(0, 1);
   renderContest();
 });
+contestStatus.addEventListener('input', () => { contestPage = 0; renderContest(); });
 contestSearch.addEventListener('input', () => { contestPage = 0; renderContest(); });
 contestPrev.addEventListener('click', () => { contestPage--; renderContest(); });
 contestNext.addEventListener('click', () => { contestPage++; renderContest(); });

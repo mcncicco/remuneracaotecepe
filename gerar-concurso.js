@@ -5,6 +5,14 @@ const careers = new Map();
 const csvRows = [];
 const rowPattern = /^(\d{12})\s+(.+?)\s+(\d{2}\/\d{2}\/\d{4})\s+((?:\d+(?:,\d+)?\s+){3,4})(Aprovado(?:\s+(?:PCD|Negro))*)\s+(\d+)º$/;
 const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const normalizeStatus = status => {
+  const normalized = status.trim().replace(/\s+/g, ' ').toUpperCase();
+  if (normalized === 'APROVADO') return 'Aprovado';
+  if (normalized === 'APROVADO PCD') return 'Aprovado PCD';
+  if (normalized === 'APROVADO NEGRO') return 'Aprovado Negro';
+  if (normalized === 'APROVADO PCD NEGRO') return 'Aprovado PCD/Negro';
+  throw new Error(`Situacao nao reconhecida: ${status}.`);
+};
 
 if (document.pages.length !== 12 || document.total !== 14) throw new Error('O anexo esperado possui 12 paginas de resultados.');
 
@@ -25,7 +33,7 @@ for (const page of document.pages) {
     if (scores.length !== (isAttorney ? 4 : 3)) throw new Error(`Quantidade inesperada de notas na pagina ${page.num}.`);
     const rank = Number(match[6]);
     if (rank !== results.length + 1) throw new Error(`Classificacao inesperada na pagina ${page.num}: ${rank}.`);
-    results.push({ classificacao: rank, nome: match[2], nascimento: match[3], objetiva: scores[0], discursiva: scores[1], titulos: isAttorney ? scores[2] : null, final: scores[scores.length - 1] });
+    results.push({ classificacao: rank, nome: match[2], nascimento: match[3], objetiva: scores[0], discursiva: scores[1], titulos: isAttorney ? scores[2] : null, final: scores[scores.length - 1], situacao: normalizeStatus(match[5]) });
     csvRows.push([title, rank, match[1], match[2], match[3], rawScores[0], rawScores[1], isAttorney ? rawScores[2] : '', rawScores[rawScores.length - 1], match[5]]);
   }
 }
