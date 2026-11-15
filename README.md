@@ -1,4 +1,4 @@
-# Simulador de remuneração TCE-PE
+# Simulador de remuneração
 
 Site estático independente para comparar a remuneração estimada de Auditor de Controle Externo, Analista de Controle Externo e Analista de Gestão. Não há servidor, banco de dados ou coleta de informações.
 
