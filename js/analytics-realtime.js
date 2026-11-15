@@ -2,8 +2,8 @@
   const endpoint = document
     .querySelector('meta[name="analytics-realtime-endpoint"]')
     ?.content.trim();
-  const indicator = document.getElementById("realtime-users");
-  const value = document.getElementById("realtime-users-value");
+  const indicator = document.getElementById("realtime-metrics");
+  const value = document.getElementById("realtime-metrics-value");
 
   if (!endpoint || !indicator || !value) {
     return;
@@ -25,16 +25,19 @@
       if (
         !Number.isSafeInteger(data.activeUsers) ||
         data.activeUsers < 0 ||
+        !Number.isSafeInteger(data.screenPageViews) ||
+        data.screenPageViews < 0 ||
         data.windowMinutes !== 30
       ) {
         throw new Error("Realtime endpoint returned an invalid response.");
       }
 
-      value.textContent = `${new Intl.NumberFormat("pt-BR").format(data.activeUsers)} usuários ativos nos últimos 30 minutos`;
+      const formatter = new Intl.NumberFormat("pt-BR");
+      value.textContent = `${formatter.format(data.activeUsers)} usuários ativos · ${formatter.format(data.screenPageViews)} visualizações nos últimos 30 minutos`;
       indicator.dataset.state = "available";
       indicator.title = `Atualizado em ${new Date(data.updatedAt).toLocaleTimeString("pt-BR")}`;
     } catch (error) {
-      console.error("Não foi possível consultar os usuários ativos:", error);
+      console.error("Não foi possível consultar as métricas em tempo real:", error);
       value.textContent = "Contagem temporariamente indisponível";
       indicator.dataset.state = "unavailable";
       indicator.removeAttribute("title");

@@ -53,7 +53,7 @@ export default {
       }
 
       const cacheKey = new Request(
-        `${url.origin}/__cached-realtime-active-users?property=${encodeURIComponent(propertyId)}`,
+        `${url.origin}/__cached-realtime-metrics-v2?property=${encodeURIComponent(propertyId)}`,
       );
       const cachedResponse = await caches.default.match(cacheKey);
       if (cachedResponse) {
@@ -71,7 +71,10 @@ export default {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            metrics: [{ name: "activeUsers" }],
+            metrics: [
+              { name: "activeUsers" },
+              { name: "screenPageViews" },
+            ],
             metricAggregations: ["TOTAL"],
           }),
         },
@@ -82,18 +85,25 @@ export default {
       }
 
       const report = await reportResponse.json();
-      const rawCount =
-        report.totals?.[0]?.metricValues?.[0]?.value ??
-        report.rows?.[0]?.metricValues?.[0]?.value ??
-        "0";
-      const activeUsers = Number(rawCount);
-      if (!Number.isSafeInteger(activeUsers) || activeUsers < 0) {
-        throw new Error("Google Analytics returned an invalid activeUsers value.");
+      const metricValues =
+        report.totals?.[0]?.metricValues ??
+        report.rows?.[0]?.metricValues ??
+        [];
+      const activeUsers = Number(metricValues[0]?.value ?? "0");
+      const screenPageViews = Number(metricValues[1]?.value ?? "0");
+      if (
+        !Number.isSafeInteger(activeUsers) ||
+        activeUsers < 0 ||
+        !Number.isSafeInteger(screenPageViews) ||
+        screenPageViews < 0
+      ) {
+        throw new Error("Google Analytics returned invalid realtime metrics.");
       }
 
       const response = jsonResponse(
         {
           activeUsers,
+          screenPageViews,
           windowMinutes: 30,
           updatedAt: new Date().toISOString(),
         },

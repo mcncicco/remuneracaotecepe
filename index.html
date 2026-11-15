@@ -100,9 +100,12 @@
     .competition-note { margin: 18px 0 0; color: #728078; font-size: 12px; line-height: 1.7; }
     .competition-stage { margin: 0 0 18px; color: #64746b; font-size: 12px; line-height: 1.6; }
     .live strong { color: var(--green); }
+    .live { text-align: right; white-space: normal; line-height: 1.5; }
     .live[data-state="unavailable"] > span:first-child { background: var(--coral); }
     @media (max-width: 760px) {
       .topbar-inner { height: 58px; }
+      .results-heading { align-items: flex-start; flex-direction: column; }
+      .live { text-align: left; }
       .intro { padding-top: 24px; padding-bottom: 20px; }
       .statistics { padding-top: 40px; }
       .statistics-tab { padding: 10px 6px; font-size: 11px; }
@@ -163,7 +166,7 @@
       </aside>
 
       <section class="results" aria-labelledby="results-title">
-        <div class="results-heading"><div><p class="kicker">COMPARATIVO DE REMUNERAÇÃO</p><h2 id="results-title">O resultado do seu cenário</h2></div><span class="live" id="realtime-users" role="status" hidden><span aria-hidden="true"></span><strong id="realtime-users-value"></strong></span></div>
+        <div class="results-heading"><div><p class="kicker">COMPARATIVO DE REMUNERAÇÃO</p><h2 id="results-title">O resultado do seu cenário</h2></div><span class="live" id="realtime-metrics" role="status" hidden><span aria-hidden="true"></span><strong id="realtime-metrics-value"></strong></span></div>
         <div class="result-cards" id="result-cards" aria-live="polite"></div>
         <p class="result-note"><span>i</span> Valores mensais estimados, com base nos parâmetros selecionados.</p>
         <section class="breakdown" id="memoria" aria-labelledby="breakdown-title">
