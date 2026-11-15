@@ -17,7 +17,7 @@ function fillSelect(id, items, label) {
 }
 
 fillSelect('time', calculator.times, item => item);
-fillSelect('qualification', calculator.qualifications, item => item[1] ? `${item[0]} (${item[1] * 100}%)` : item[0]);
+fillSelect('qualification', calculator.qualifications, item => item[1] ? `${item[0]} (${new Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 2 }).format(item[1])})` : item[0]);
 fillSelect('location', calculator.locations, item => item[0]);
 fillSelect('position', calculator.functions, item => item[0]);
 
