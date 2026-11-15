@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#174b40">
+  <meta name="description" content="Compare a remuneração estimada de três cargos do TCE-PE.">
+  <title>Simulador de remuneração | TCE-PE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="calculator.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#inicio" aria-label="Simulador TCE-PE, início"><span class="brand-mark">T<span>.</span></span><span>REMUNERAÇÃO<br><strong>TCE-PE</strong></span></a>
+      <nav aria-label="Navegação principal"><a href="#simulador">Simulador</a><a href="#memoria">Memória de cálculo</a><a href="#fontes">Sobre os dados</a></nav>
+      <span class="top-label"><span></span> SIMULAÇÃO INDEPENDENTE</span>
+    </div>
+  </header>
+
+  <main id="inicio">
+    <div class="intro wrap">
+      <div><p class="eyebrow"><span></span> CARREIRAS DO CONTROLE EXTERNO</p><h1>Seu futuro, em números<span>.</span></h1><p class="intro-copy">Compare a remuneração de três carreiras do Tribunal de Contas de Pernambuco e explore diferentes cenários.</p></div>
+      <div class="intro-aside"><span>01 / 03</span><p>Três carreiras.<br>Uma comparação.</p></div>
+    </div>
+
+    <div class="workspace wrap" id="simulador">
+      <aside class="settings" aria-labelledby="settings-title">
+        <div class="section-heading"><div><p class="kicker">PERSONALIZE O CENÁRIO</p><h2 id="settings-title">Parâmetros</h2></div><button class="reset" id="reset" type="button" title="Restaurar parâmetros" aria-label="Restaurar parâmetros">↺</button></div>
+        <p class="settings-copy">Ajuste as opções para atualizar a comparação.</p>
+        <form id="settings-form">
+          <div class="field"><label for="time">Tempo na carreira</label><select id="time" name="time"></select></div>
+          <div class="field"><label for="qualification">Adicional de qualificação</label><select id="qualification" name="qualification"></select></div>
+          <div class="field"><label for="location">Local de exercício</label><select id="location" name="location"></select></div>
+          <div class="field"><label for="position">Função gratificada</label><select id="position" name="position"></select></div>
+          <div class="settings-divider"></div>
+          <label class="toggle-row" for="prevcom"><span>Adesão à PREVCOM-PE <small>Contribuição de 8,5%</small></span><span class="switch"><input id="prevcom" type="checkbox"><span></span></span></label>
+          <label class="toggle-row" for="oldRegime"><span>Regime antigo RPPS <small>Contribuição sobre a remuneração</small></span><span class="switch"><input id="oldRegime" type="checkbox"><span></span></span></label>
+          <label class="toggle-row" for="field"><span>Verba de campo <small>Auditor e Analista de Controle</small></span><span class="switch"><input id="field" type="checkbox"><span></span></span></label>
+          <label class="toggle-row" for="health50"><span>Mais de 50 anos ou PCD <small>Adicional no auxílio-saúde</small></span><span class="switch"><input id="health50" type="checkbox"><span></span></span></label>
+          <details class="advanced"><summary>Valores de referência <span>+</span></summary><div class="advanced-fields">
+            <div class="field"><label for="ceiling">Teto constitucional STF (R$)</label><input id="ceiling" type="number" min="0" step="0.01" inputmode="decimal"></div>
+            <div class="field"><label for="rgps">Teto RGPS (R$)</label><input id="rgps" type="number" min="0" step="0.01" inputmode="decimal"></div>
+            <div class="field"><label for="taxDeduction">Parcela a deduzir IR (R$)</label><input id="taxDeduction" type="number" min="0" step="0.01" inputmode="decimal"></div>
+            <div class="field"><label for="fieldAmount">Verba de campo (R$)</label><input id="fieldAmount" type="number" min="0" step="0.01" inputmode="decimal"></div>
+          </div></details>
+        </form>
+      </aside>
+
+      <section class="results" aria-labelledby="results-title">
+        <div class="results-heading"><div><p class="kicker">COMPARATIVO DE REMUNERAÇÃO</p><h2 id="results-title">O resultado do seu cenário</h2></div><span class="live"><span></span> ATUALIZAÇÃO EM TEMPO REAL</span></div>
+        <div class="result-cards" id="result-cards" aria-live="polite"></div>
+        <p class="result-note"><span>i</span> Valores mensais estimados, com base nos parâmetros selecionados.</p>
+        <section class="breakdown" id="memoria" aria-labelledby="breakdown-title">
+          <div class="breakdown-heading"><div><p class="kicker">DE ONDE VEM CADA VALOR</p><h2 id="breakdown-title">Memória de cálculo</h2></div><span>VALORES EM R$</span></div>
+          <div class="table-scroll" tabindex="0" aria-label="Tabela comparativa de remuneração"><table><thead><tr><th scope="col">RUBRICA</th><th scope="col">AUDITOR</th><th scope="col">ANALISTA</th><th scope="col">GESTÃO</th></tr></thead><tbody id="breakdown-body"></tbody></table></div>
+          <p class="table-hint">Deslize a tabela para ver todos os cargos.</p>
+        </section>
+      </section>
+    </div>
+
+    <section class="about wrap" id="fontes"><div><p class="kicker">TRANSPARÊNCIA</p><h2>Sobre esta simulação<span>.</span></h2></div><div class="about-copy"><p>Os valores e as fórmulas foram reproduzidos da planilha <strong>Simulador TCE PE R6</strong>, incluindo suas tabelas de progressão e parâmetros de cálculo. A aba “Dados” da planilha não informa links para fontes legais.</p><p>Esta é uma ferramenta independente e informativa, sem vínculo oficial com o TCE-PE. Os valores podem estar desatualizados e não substituem a consulta às normas e à folha de pagamento. No regime antigo, a planilha exibe o abate-teto, mas não o soma aos descontos; também não deduz a PREVCOM da base do IR.</p></div></section>
+  </main>
+  <footer><div class="wrap footer-inner"><span>SIMULADOR DE REMUNERAÇÃO <strong>TCE-PE</strong></span><span>Uma ferramenta independente de comparação.</span></div></footer>
+</body>
+</html>
