@@ -61,3 +61,16 @@ Ao alterar os arquivos JavaScript ou CSS, atualize também o valor de `v` nas re
 2. No repositório, abra **Settings > Pages**.
 3. Em **Build and deployment**, selecione **Deploy from a branch**, escolha a branch principal e a pasta `/ (root)` e salve.
 4. Após a publicação, acesse `https://mcncicco.github.io/remuneracaotecepe/`.
+
+## Usuários ativos em tempo real
+
+O site pode exibir a quantidade de usuários ativos nos últimos 30 minutos usando a API de tempo real do GA4. O navegador consulta somente o endpoint público agregado; a chave da conta de serviço do Google deve ficar como secret do Cloudflare Worker e nunca ser incluída no repositório.
+
+Para configurar:
+
+1. No Google Cloud, habilite a **Google Analytics Data API** e crie uma conta de serviço com uma chave JSON. No GA4, adicione o e-mail da conta de serviço ao acesso da propriedade com a função **Leitor**. O ID numérico da propriedade mostrado durante a configuração é `564408155`; confirme em **Administrador → Detalhes da propriedade**.
+2. No Cloudflare, crie um Worker e use `cloudflare/analytics-realtime-worker.js` como código. Configure as variáveis `GA4_PROPERTY_ID=564408155` e `ALLOWED_ORIGIN=https://mcncicco.github.io`. Adicione `GOOGLE_SERVICE_ACCOUNT_JSON` como **secret**, com o conteúdo integral do JSON da conta de serviço, e publique o Worker.
+3. Configure `meta[name="analytics-realtime-endpoint"]` em `index.html` com a URL pública do Worker acrescida de `/api/realtime`. A URL configurada atualmente é `https://remuneracao-tcepe-realtime.marcelocicco.workers.dev/api/realtime`; ela é pública, não uma credencial.
+4. Publique o site no GitHub Pages. O indicador consulta o Worker uma vez por minuto; o Worker mantém a resposta em cache por 60 segundos e solicita ao GA4 apenas a métrica agregada `activeUsers`, sem dimensões ou dados individuais.
+
+O GA4 padrão apresenta usuários ativos em uma janela móvel de até 30 minutos; essa contagem não representa visitantes simultâneos no mesmo segundo. Se o endpoint falhar, o indicador informa indisponibilidade e o erro detalhado fica no log do Worker.

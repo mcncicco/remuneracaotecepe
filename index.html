@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#174b40">
   <meta name="description" content="Compare a remuneração estimada de três cargos do .">
+  <meta name="analytics-realtime-endpoint" content="https://remuneracao-tcepe-realtime.marcelocicco.workers.dev/api/realtime">
   <title>Simulador de remuneração | </title>
   <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KF3H55RZ"></script>
   <script>
@@ -98,6 +99,8 @@
     .appointment-legend .vacancy-edital-swatch { border-color: #a5c9a7; background: #c8e6c9; }
     .competition-note { margin: 18px 0 0; color: #728078; font-size: 12px; line-height: 1.7; }
     .competition-stage { margin: 0 0 18px; color: #64746b; font-size: 12px; line-height: 1.6; }
+    .live strong { color: var(--green); }
+    .live[data-state="unavailable"] > span:first-child { background: var(--coral); }
     @media (max-width: 760px) {
       .topbar-inner { height: 58px; }
       .intro { padding-top: 24px; padding-bottom: 20px; }
@@ -118,6 +121,7 @@
   <script defer src="js/vagas-concurso.js?v=20261115-2"></script>
   <script defer src="js/classificacao-concurso.js?v=20261115-3"></script>
   <script defer src="js/app.js?v=20261115-11"></script>
+  <script defer src="js/analytics-realtime.js?v=20261115-1"></script>
 </head>
 <body>
   <header class="topbar">
@@ -159,7 +163,7 @@
       </aside>
 
       <section class="results" aria-labelledby="results-title">
-        <div class="results-heading"><div><p class="kicker">COMPARATIVO DE REMUNERAÇÃO</p><h2 id="results-title">O resultado do seu cenário</h2></div><span class="live"><span></span> </span></div>
+        <div class="results-heading"><div><p class="kicker">COMPARATIVO DE REMUNERAÇÃO</p><h2 id="results-title">O resultado do seu cenário</h2></div><span class="live" id="realtime-users" role="status" hidden><span aria-hidden="true"></span><strong id="realtime-users-value"></strong></span></div>
         <div class="result-cards" id="result-cards" aria-live="polite"></div>
         <p class="result-note"><span>i</span> Valores mensais estimados, com base nos parâmetros selecionados.</p>
         <section class="breakdown" id="memoria" aria-labelledby="breakdown-title">
