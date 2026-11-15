@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20261115-1">
   <style>
     .topbar-inner { height: 64px; }
     .intro { padding-top: 30px; padding-bottom: 24px; }
@@ -57,6 +57,14 @@
     .positions-pagination button:disabled { color: #aab6ae; cursor: default; }
     .positions-pagination span { color: #728078; font-size: 11px; }
     .statistics-panel .positions-note { margin-top: 18px; line-height: 1.7; }
+    .competition { padding-top: 60px; }
+    .competition h2 { margin: 8px 0 24px; font-size: 22px; }
+    .competition-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; border-top: 1px solid var(--line); padding-top: 20px; }
+    .competition-table { min-width: 850px; }
+    .competition-table thead th:not(:first-child) { width: auto; }
+    .competition-table th:nth-child(2), .competition-table td:nth-child(2) { text-align: left; }
+    .competition-note { margin: 18px 0 0; color: #728078; font-size: 12px; line-height: 1.7; }
+    .competition-stage { margin: 0 0 18px; color: #64746b; font-size: 12px; line-height: 1.6; }
     @media (max-width: 760px) {
       .topbar-inner { height: 58px; }
       .intro { padding-top: 24px; padding-bottom: 20px; }
@@ -65,11 +73,16 @@
       .statistics-panel { padding: 20px 6px; }
       .positions-filters { grid-template-columns: 1fr; gap: 0; }
       .functions-filters { grid-template-columns: 1fr; }
+      .competition { padding-top: 40px; }
+      .competition-filters { grid-template-columns: 1fr; gap: 0; }
     }
   </style>
-  <script defer src="calculator.js"></script>
-  <script defer src="estatisticas-cargos.js"></script>
-  <script defer src="app.js"></script>
+  <script defer src="calculator.js?v=20261115-1"></script>
+  <script defer src="estatisticas-cargos.js?v=20261115-1"></script>
+  <script defer src="resultado-concurso.js?v=20261115-2"></script>
+  <script defer src="resultado-reaplicacao.js?v=20261115-2"></script>
+  <script defer src="classificacao-concurso.js?v=20261115-1"></script>
+  <script defer src="app.js?v=20261115-5"></script>
 </head>
 <body>
   <header class="topbar">
@@ -184,6 +197,21 @@
         <div class="positions-pagination"><button type="button" id="functions-prev">Anterior</button><span id="functions-page"></span><button type="button" id="functions-next">Próxima</button></div>
         <p class="positions-note">Fonte: CSV de consulta de vencimentos e tabela de funções fornecidos. A identificação é estimada por correspondência exata de valor e não confirma a função exercida. O valor de R$ 3.119,86 corresponde tanto a TC-FGS-1 quanto a TC-FGA-3; valores diferentes da tabela ficam como não identificados. Registros com valor zero não são exibidos.</p>
       </div>
+    </section>
+
+    <section class="competition wrap" id="concurso-2025" aria-labelledby="competition-title">
+      <p class="kicker">PROCESSO SELETIVO</p>
+      <h2 id="competition-title">Concurso 2025</h2>
+      <div class="competition-filters">
+        <div class="field"><label for="contest-career">Cargo / Área</label><select id="contest-career"></select></div>
+        <div class="field"><label for="contest-search">Nome</label><input id="contest-search" type="search" placeholder="Buscar candidato"></div>
+      </div>
+      <p class="competition-stage" id="contest-stage"></p>
+      <div class="positions-summary"><p id="contest-count" role="status"></p></div>
+      <div class="table-scroll" tabindex="0" aria-label="Resultados do concurso por cargo"><table class="competition-table"><thead><tr><th scope="col">CLASSIFICAÇÃO</th><th scope="col">NOME</th><th scope="col">NASCIMENTO</th><th scope="col">OBJETIVA</th><th scope="col">DISCURSIVA</th><th scope="col">TÍTULOS</th><th scope="col">NOTA FINAL</th></tr></thead><tbody id="contest-body"></tbody></table></div>
+      <p class="table-hint">Deslize a tabela para ver todas as colunas.</p>
+      <div class="positions-pagination"><button type="button" id="contest-prev">Anterior</button><span id="contest-page"></span><button type="button" id="contest-next">Próxima</button></div>
+      <p class="competition-note">Fonte: documentos de resultados fornecidos. Consulte a <a href="https://conhecimento.fgv.br/concursos/tcepe" target="_blank" rel="noopener noreferrer">página do concurso</a> para as publicações, eventuais atualizações e listas completas.</p>
     </section>
 
     <section class="about wrap" id="fontes"><div><p class="kicker">TRANSPARÊNCIA</p><h2>Sobre esta simulação<span>.</span></h2></div><div class="about-copy"><p>Os valores e as fórmulas foram reproduzidos da planilha <strong>Simulador TCE PE R6</strong>, incluindo suas tabelas de progressão e parâmetros de cálculo. A aba “Dados” da planilha não informa links para fontes legais.</p><p>Esta é uma ferramenta independente e informativa, sem vínculo oficial com o TCE-PE. Os valores podem estar desatualizados e não substituem a consulta às normas e à folha de pagamento. No regime antigo, a planilha exibe o abate-teto, mas não o soma aos descontos; também não deduz a PREVCOM da base do IR.</p></div></section>

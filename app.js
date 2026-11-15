@@ -117,11 +117,11 @@ const positionsNext = document.querySelector('#positions-next');
 const positionsPageSize = 10;
 let positionsPage = 0;
 
-function createStatisticsSorter(table, columns, initialColumn, onChange) {
+function createStatisticsSorter(table, columns, initialColumn, onChange, initialDirection = -1) {
   const headers = Array.from(table.querySelectorAll('thead th'));
   const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
   let column = initialColumn;
-  let direction = -1;
+  let direction = initialDirection;
 
   function updateHeaders() {
     headers.forEach((header, index) => {
@@ -145,11 +145,14 @@ function createStatisticsSorter(table, columns, initialColumn, onChange) {
   });
   updateHeaders();
 
-  return rows => rows.sort((first, second) => {
+  const sort = rows => rows.sort((first, second) => {
     const firstValue = columns[column].value(first);
     const secondValue = columns[column].value(second);
+    if (firstValue == null || secondValue == null) return firstValue == null ? (secondValue == null ? 0 : 1) : -1;
     return direction * (columns[column].numeric ? firstValue - secondValue : collator.compare(firstValue, secondValue));
   });
+  sort.set = (nextColumn, nextDirection) => { column = nextColumn; direction = nextDirection; updateHeaders(); };
+  return sort;
 }
 
 const vacanciesTable = document.querySelector('.vacancies-table');
@@ -367,3 +370,81 @@ function renderFunctions() {
 functionsPrev.addEventListener('click', () => { functionsPage--; renderFunctions(); });
 functionsNext.addEventListener('click', () => { functionsPage++; renderFunctions(); });
 renderFunctions();
+
+const contestCareer = document.querySelector('#contest-career');
+const contestSearch = document.querySelector('#contest-search');
+const contestBody = document.querySelector('#contest-body');
+const contestPrev = document.querySelector('#contest-prev');
+const contestNext = document.querySelector('#contest-next');
+const contestScoreFormat = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
+let contestPage = 0;
+const contestCareers = [...contestData, ...contestReapplicationData.map(career => ({ ...career, resultados: ContestRanking.calculate(career.resultados) }))];
+
+contestCareers.forEach((career, index) => {
+  const option = document.createElement('option');
+  option.value = index;
+  option.textContent = career.fase === 'reaplicacao' ? `${career.cargo} — REAPLICAÇÃO` : career.cargo;
+  contestCareer.append(option);
+});
+
+const sortContest = createStatisticsSorter(document.querySelector('.competition-table'), [
+  { value: row => row.classificacao, numeric: true },
+  { value: row => row.nome },
+  { value: row => row.nascimento.split('/').reverse().join('-') },
+  { value: row => row.objetiva, numeric: true },
+  { value: row => row.discursiva, numeric: true },
+  { value: row => row.titulos, numeric: true },
+  { value: row => row.final, numeric: true }
+], 0, () => { contestPage = 0; renderContest(); }, 1);
+
+function renderContest() {
+  const query = contestSearch.value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR');
+  const career = contestCareers[Number(contestCareer.value)];
+  const isReapplication = career.fase === 'reaplicacao';
+  const hasTitles = career.cargo === 'PROCURADOR DO TRIBUNAL DE CONTAS';
+  const headers = document.querySelectorAll('.competition-table thead th');
+  headers[5].hidden = !hasTitles;
+  headers[0].querySelector('button').textContent = isReapplication ? 'COLOCAÇÃO ESTIMADA' : 'CLASSIFICAÇÃO';
+  headers[3].querySelector('button').textContent = isReapplication ? 'OBJETIVA DEFINITIVA' : 'OBJETIVA';
+  headers[4].querySelector('button').textContent = isReapplication ? 'DISCURSIVA PRELIMINAR' : 'DISCURSIVA';
+  headers[6].querySelector('button').textContent = isReapplication ? 'NOTA FINAL ESTIMADA' : 'NOTA FINAL';
+  document.querySelector('#contest-stage').textContent = isReapplication
+    ? 'Reaplicação: nota final e colocação estimadas pela soma das notas, com desempate por idade. Não são classificação oficial, não consideram cotas ou outros critérios e podem mudar após recursos; candidatos sem nota da discursiva não são classificados.'
+    : 'Resultado final com homologação parcial, conforme documento fornecido de 1º de setembro de 2026.';
+  const filtered = sortContest(career.resultados.filter(row => row.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR').includes(query)));
+  const pages = Math.max(1, Math.ceil(filtered.length / positionsPageSize));
+  contestPage = Math.min(contestPage, pages - 1);
+  contestBody.replaceChildren();
+  filtered.slice(contestPage * positionsPageSize, (contestPage + 1) * positionsPageSize).forEach(item => {
+    const row = document.createElement('tr');
+    [item.classificacao === null ? '—' : `${item.classificacao}º`, item.nome, item.nascimento, contestScoreFormat.format(item.objetiva), item.discursiva === null ? '—' : contestScoreFormat.format(item.discursiva), item.titulos === null ? '—' : contestScoreFormat.format(item.titulos), item.final === null ? '—' : contestScoreFormat.format(item.final)].forEach((value, index) => {
+      const cell = document.createElement('td');
+      if (!hasTitles && index === 5) cell.hidden = true;
+      cell.textContent = value;
+      row.append(cell);
+    });
+    contestBody.append(row);
+  });
+  if (!filtered.length) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = hasTitles ? 7 : 6;
+    cell.textContent = 'Nenhum resultado encontrado.';
+    row.append(cell);
+    contestBody.append(row);
+  }
+  document.querySelector('#contest-count').textContent = `${filtered.length} resultado${filtered.length === 1 ? '' : 's'}`;
+  document.querySelector('#contest-page').textContent = `Página ${contestPage + 1} de ${pages}`;
+  contestPrev.disabled = contestPage === 0;
+  contestNext.disabled = contestPage === pages - 1;
+}
+
+contestCareer.addEventListener('input', () => {
+  contestPage = 0;
+  sortContest.set(0, 1);
+  renderContest();
+});
+contestSearch.addEventListener('input', () => { contestPage = 0; renderContest(); });
+contestPrev.addEventListener('click', () => { contestPage--; renderContest(); });
+contestNext.addEventListener('click', () => { contestPage++; renderContest(); });
+renderContest();
