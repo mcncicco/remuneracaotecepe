@@ -3,7 +3,7 @@ const form = document.querySelector('#settings-form');
 const formatMoney = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatNumber = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const selectFields = ['time', 'qualification', 'location', 'position'];
-const booleanFields = ['prevcom', 'oldRegime', 'field', 'health50'];
+const booleanFields = ['prevcom', 'oldRegime', 'field', 'health50', 'inflation'];
 const numberFields = ['ceiling', 'rgps', 'taxDeduction', 'fieldAmount'];
 
 function fillSelect(id, items, label) {

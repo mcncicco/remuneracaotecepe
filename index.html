@@ -10,6 +10,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <style>
+    .topbar-inner { height: 64px; }
+    .intro { padding-top: 30px; padding-bottom: 24px; }
+    @media (max-width: 760px) {
+      .topbar-inner { height: 58px; }
+      .intro { padding-top: 24px; padding-bottom: 20px; }
+    }
+  </style>
   <script defer src="calculator.js"></script>
   <script defer src="app.js"></script>
 </head>
@@ -42,6 +50,7 @@
           <label class="toggle-row" for="oldRegime"><span>Regime antigo RPPS <small>Contribuição sobre a remuneração</small></span><span class="switch"><input id="oldRegime" type="checkbox"><span></span></span></label>
           <label class="toggle-row" for="field"><span>Verba de campo <small>Auditor e Analista de Controle</small></span><span class="switch"><input id="field" type="checkbox"><span></span></span></label>
           <label class="toggle-row" for="health50"><span>Mais de 50 anos ou PCD <small>Adicional no auxílio-saúde</small></span><span class="switch"><input id="health50" type="checkbox"><span></span></span></label>
+          <label class="toggle-row" for="inflation"><span>Reajuste pela inflação <small>5% sobre vencimento e gratificação</small></span><span class="switch"><input id="inflation" type="checkbox"><span></span></span></label>
           <details class="advanced"><summary>Valores de referência <span>+</span></summary><div class="advanced-fields">
             <div class="field"><label for="ceiling">Teto constitucional STF (R$)</label><input id="ceiling" type="number" min="0" step="0.01" inputmode="decimal"></div>
             <div class="field"><label for="rgps">Teto RGPS (R$)</label><input id="rgps" type="number" min="0" step="0.01" inputmode="decimal"></div>
