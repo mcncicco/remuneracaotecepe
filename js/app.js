@@ -124,6 +124,43 @@ const positionsNext = document.querySelector('#positions-next');
 const positionsPageSize = 10;
 let positionsPage = 0;
 
+function addStatisticsTooltip(cell, description, accessibleLabel) {
+  if (!description) return;
+  cell.title = description;
+  const info = document.createElement('span');
+  info.className = 'statistics-info';
+  info.title = description;
+  info.setAttribute('role', 'img');
+  info.setAttribute('aria-label', `${accessibleLabel}: ${description}`);
+  const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  icon.setAttribute('viewBox', '0 0 20 20');
+  icon.setAttribute('aria-hidden', 'true');
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute('cx', '10');
+  circle.setAttribute('cy', '10');
+  circle.setAttribute('r', '8.25');
+  circle.setAttribute('fill', '#eaf3ed');
+  circle.setAttribute('stroke', 'currentColor');
+  circle.setAttribute('stroke-width', '1.5');
+  const stem = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  stem.setAttribute('d', 'M10 9v5');
+  stem.setAttribute('stroke', 'currentColor');
+  stem.setAttribute('stroke-width', '1.7');
+  stem.setAttribute('stroke-linecap', 'round');
+  const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  dot.setAttribute('cx', '10');
+  dot.setAttribute('cy', '6.3');
+  dot.setAttribute('r', '1');
+  dot.setAttribute('fill', 'currentColor');
+  icon.append(circle, stem, dot);
+  info.append(icon);
+  cell.append(info);
+}
+
+function addLocationTooltip(cell, location) {
+  addStatisticsTooltip(cell, locationLabels[location], `Descrição da lotação ${location}`);
+}
+
 function createStatisticsSorter(table, columns, initialColumn, onChange, initialDirection = -1) {
   const headers = Array.from(table.querySelectorAll('thead th'));
   const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
@@ -267,6 +304,7 @@ function renderPositions() {
     [item.lotacao, item.cargo, item.classe || 'Não informada', item.quantidade, item.campo].forEach((value, index) => {
       const cell = document.createElement('td');
       cell.textContent = value;
+      if (index === 0) addLocationTooltip(cell, item.lotacao);
       cell.hidden = index < positionDimensions.length && groupedDimensions.includes(positionDimensions[index]);
       row.append(cell);
     });
@@ -319,24 +357,6 @@ const functionsPrev = document.querySelector('#functions-prev');
 const functionsNext = document.querySelector('#functions-next');
 const functionsDimensions = ['lotacao', 'cargo', 'classe', 'codigo'];
 let functionsPage = 0;
-
-const functionLabels = {
-  'TC-FGG': 'Função Gratificada de Gerência',
-  'TC-FGS-1 / TC-FGA-3': 'Função Gratificada de Secretaria - 1 ou de Assessoria - 3',
-  'TC-FGS-2': 'Função Gratificada de Secretaria - 2',
-  'TC-FAG-1': 'Função de Apoio Gratificada - 1',
-  'TC-FAG-2': 'Função de Apoio Gratificada - 2',
-  'TC-FAG-3': 'Função de Apoio Gratificada - 3',
-  'TC-FGA-1': 'Função Gratificada de Assessoria - 1',
-  'TC-FGA-2': 'Função Gratificada de Assessoria - 2',
-  'TC-FGE-1': 'Função Gratificada Executiva - 1',
-  'TC-FGE-2': 'Função Gratificada Executiva - 2',
-  'TC-FGE-3': 'Função Gratificada Executiva - 3',
-  'TC-FGE-4': 'Função Gratificada Executiva - 4',
-  'TC-FGE-5': 'Função Gratificada Executiva - 5',
-  'NAO_IDENTIFICADA': 'Valor sem correspondência exata',
-  'SEM_VALOR': 'Valor igual a zero'
-};
 
 [...new Set(functionData.filter(row => row.codigo !== 'SEM_VALOR').map(row => row.lotacao))].sort((first, second) => first.localeCompare(second, 'pt-BR', { numeric: true })).forEach(location => {
   const option = document.createElement('option');
@@ -400,6 +420,8 @@ function renderFunctions() {
     [item.lotacao, item.cargo, item.classe || 'Não informada', code, item.quantidade].forEach((value, index) => {
       const cell = document.createElement('td');
       cell.textContent = value;
+      if (index === 0) addLocationTooltip(cell, item.lotacao);
+      if (index === 3) addStatisticsTooltip(cell, functionLabels[item.codigo], `Descrição da função ${code}`);
       const dimension = functionsDimensions[index];
       cell.hidden = dimension ? groupedDimensions.includes(dimension) : false;
       row.append(cell);

@@ -48,19 +48,22 @@
     .statistics-group-toggle input:checked { border-color: var(--green); background: var(--green); }
     .statistics-group-toggle input:checked::before { transform: translateX(14px); }
     .statistics-group-toggle input:focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
+    .statistics-info { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; margin-left: 5px; border: 0; border-radius: 50%; color: var(--green); line-height: 1; vertical-align: middle; cursor: help; transition: color 160ms ease, transform 160ms ease; }
+    .statistics-info:hover { color: var(--green-dark); transform: scale(1.08); }
+    .statistics-info svg { display: block; width: 100%; height: 100%; }
     .positions-summary { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: baseline; margin: 0 0 12px; }
     .positions-summary strong { color: var(--green); }
     .positions-table { min-width: 850px; }
     .positions-table thead th:not(:first-child) { width: auto; }
     .positions-table th:nth-child(2), .positions-table td:nth-child(2), .positions-table th:nth-child(3), .positions-table td:nth-child(3) { text-align: left; }
     .positions-table td:last-child, .positions-table th:last-child { width: 110px; }
-    .functions-filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 2fr); }
+    .functions-filters { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.5fr); }
     .functions-table { min-width: 0; table-layout: fixed; font-size: 10px; }
     .functions-table th, .functions-table td { padding: 9px 7px; overflow-wrap: anywhere; }
-    .functions-table th:nth-child(1) { width: 12%; }
-    .functions-table th:nth-child(2) { width: 34%; text-align: left; }
-    .functions-table th:nth-child(3) { width: 19%; text-align: left; }
-    .functions-table th:nth-child(4) { width: 21%; text-align: left; }
+    .functions-table th:nth-child(1) { width: 20%; }
+    .functions-table th:nth-child(2) { width: 29%; text-align: left; }
+    .functions-table th:nth-child(3) { width: 17%; text-align: left; }
+    .functions-table th:nth-child(4) { width: 20%; text-align: left; }
     .functions-table th:nth-child(5) { width: 14%; }
     .functions-table td:nth-child(2), .functions-table td:nth-child(3), .functions-table td:nth-child(4) { text-align: left; }
     #panel-positions .table-hint { display: none; }
@@ -210,9 +213,9 @@
         <h3>Função gratificada / cargo em comissão por lotação</h3>
         <div class="positions-filters functions-filters">
           <div class="field"><label for="functions-location">Lotação</label><select id="functions-location"><option value="">Todas as lotações</option></select><label class="statistics-group-toggle" for="functions-group-location"><input id="functions-group-location" type="checkbox">Agrupar</label></div>
-          <div class="field"><label for="functions-type">Função compatível</label><select id="functions-type"><option value="">Todas as classificações</option></select><label class="statistics-group-toggle" for="functions-group-type"><input id="functions-group-type" type="checkbox">Agrupar</label></div>
-          <div class="field"><label for="functions-grade">Classe / Faixa</label><select id="functions-grade"><option value="">Todas as classes</option></select><label class="statistics-group-toggle" for="functions-group-grade"><input id="functions-group-grade" type="checkbox">Agrupar</label></div>
           <div class="field"><label for="functions-role">Cargo</label><select id="functions-role"><option value="">Todos os cargos</option></select><label class="statistics-group-toggle" for="functions-group-role"><input id="functions-group-role" type="checkbox">Agrupar</label></div>
+          <div class="field"><label for="functions-grade">Classe / Faixa</label><select id="functions-grade"><option value="">Todas as classes</option></select><label class="statistics-group-toggle" for="functions-group-grade"><input id="functions-group-grade" type="checkbox">Agrupar</label></div>
+          <div class="field"><label for="functions-type">Função compatível</label><select id="functions-type"><option value="">Todas as classificações</option></select><label class="statistics-group-toggle" for="functions-group-type"><input id="functions-group-type" type="checkbox">Agrupar</label></div>
         </div>
         <div class="positions-summary"><p id="functions-count" role="status"></p><strong id="functions-total"></strong></div>
         <div class="table-scroll" tabindex="0" aria-label="Tabela de funções compatíveis por lotação"><table class="functions-table"><thead><tr><th scope="col">LOTAÇÃO</th><th scope="col">CARGO</th><th scope="col">CLASSE / FAIXA</th><th scope="col">SÍMBOLO COMPATÍVEL</th><th scope="col">REGISTROS</th></tr></thead><tbody id="functions-body"></tbody></table></div>
@@ -241,6 +244,6 @@
 
     <section class="about wrap" id="fontes"><div><p class="kicker">TRANSPARÊNCIA</p><h2>Sobre esta simulação<span>.</span></h2></div><div class="about-copy"><p>Os valores e as fórmulas foram reproduzidos da planilha <strong>Simulador TCE PE R6</strong>, incluindo suas tabelas de progressão e parâmetros de cálculo. A aba “Dados” da planilha não informa links para fontes legais.</p><p>Esta é uma ferramenta independente e informativa, sem vínculo oficial com o TCE-PE. Os valores podem estar desatualizados e não substituem a consulta às normas e à folha de pagamento. No regime antigo, a planilha exibe o abate-teto, mas não o soma aos descontos; também não deduz a PREVCOM da base do IR.</p></div></section>
   </main>
-  <footer><div class="wrap footer-inner"><span>SIMULADOR DE REMUNERAÇÃO <strong>TCE-PE</strong></span><span>Uma ferramenta independente de comparação.</span></div></footer>
+  <footer><div class="wrap footer-inner"><span>SIMULADOR DE REMUNERAÇÃO <strong>TCE-PE</strong></span><span>Uma ferramenta independente apenas para simulação, sem valor legal.</span></div></footer>
 </body>
 </html>

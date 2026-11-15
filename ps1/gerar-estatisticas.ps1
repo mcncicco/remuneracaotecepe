@@ -2,9 +2,13 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$CsvPath,
     [Parameter(Mandatory = $true)]
-    [string]$IndenizacoesCsvPath
+    [string]$IndenizacoesCsvPath,
+    [string]$LegendCsvPath,
+    [string]$FunctionLegendCsvPath
 )
 
+$LegendCsvPath = if ([string]::IsNullOrWhiteSpace($LegendCsvPath)) { Join-Path $PSScriptRoot '..\csv\legendas-lotacoes.csv' } else { $LegendCsvPath }
+$FunctionLegendCsvPath = if ([string]::IsNullOrWhiteSpace($FunctionLegendCsvPath)) { Join-Path $PSScriptRoot '..\csv\legendas-funcoes.csv' } else { $FunctionLegendCsvPath }
 $locationColumn = 'Lota' + [char]0x00E7 + [char]0x00E3 + 'o'
 $functionColumn = 'Fun' + [char]0x00E7 + [char]0x00E3 + 'o gratificada /<br> Cargo em comiss' + [char]0x00E3 + 'o'
 $indemnityColumn = 'Outras Indeniza' + [char]0x00E7 + [char]0x00F5 + 'es'
@@ -16,6 +20,38 @@ if ($rows.Count -eq 0 -or $rows[0].PSObject.Properties.Name -notcontains 'Classe
 $indemnities = @(Import-Csv -LiteralPath $IndenizacoesCsvPath -Delimiter ';' -Encoding UTF8)
 if ($indemnities.Count -eq 0 -or $indemnities[0].PSObject.Properties.Name -notcontains $indemnityColumn -or $indemnities[0].PSObject.Properties.Name -notcontains 'Classe/<br>Faixa') {
     throw 'O CSV de indenizacoes esta vazio ou nao possui as colunas necessarias.'
+}
+$legends = @(Import-Csv -LiteralPath $LegendCsvPath -Delimiter ';' -Encoding UTF8)
+if ($legends.Count -eq 0 -or $legends[0].PSObject.Properties.Name -notcontains 'sigla_lotacao' -or $legends[0].PSObject.Properties.Name -notcontains 'legenda') {
+    throw 'O CSV de legendas esta vazio ou nao possui as colunas necessarias.'
+}
+$locationLabels = @{}
+$seenLegendCodes = @{}
+foreach ($legend in $legends) {
+    $code = $legend.sigla_lotacao.Trim()
+    if ([string]::IsNullOrWhiteSpace($code) -or $seenLegendCodes.ContainsKey($code)) {
+        throw 'O CSV de legendas contem siglas vazias ou duplicadas.'
+    }
+    $seenLegendCodes[$code] = $true
+    if (-not [string]::IsNullOrWhiteSpace($legend.legenda)) {
+        $locationLabels[$code] = $legend.legenda.Trim()
+    }
+}
+$functionLegends = @(Import-Csv -LiteralPath $FunctionLegendCsvPath -Delimiter ';' -Encoding UTF8)
+if ($functionLegends.Count -eq 0 -or $functionLegends[0].PSObject.Properties.Name -notcontains 'codigo_funcao' -or $functionLegends[0].PSObject.Properties.Name -notcontains 'legenda') {
+    throw 'O CSV de legendas de funcoes esta vazio ou nao possui as colunas necessarias.'
+}
+$functionLabels = @{}
+$seenFunctionCodes = @{}
+foreach ($functionLegend in $functionLegends) {
+    $code = $functionLegend.codigo_funcao.Trim()
+    if ([string]::IsNullOrWhiteSpace($code) -or $seenFunctionCodes.ContainsKey($code)) {
+        throw 'O CSV de legendas de funcoes contem codigos vazios ou duplicados.'
+    }
+    $seenFunctionCodes[$code] = $true
+    if (-not [string]::IsNullOrWhiteSpace($functionLegend.legenda)) {
+        $functionLabels[$code] = $functionLegend.legenda.Trim()
+    }
 }
 $indemnitiesByName = @{}
 foreach ($indemnity in $indemnities) {
@@ -90,6 +126,8 @@ $functionAggregated = @(
 )
 $json = ConvertTo-Json -InputObject $aggregated -Depth 3 -Compress
 $functionJson = ConvertTo-Json -InputObject $functionAggregated -Depth 3 -Compress
+$locationLabelsJson = if ($locationLabels.Count -gt 0) { ConvertTo-Json -InputObject ([pscustomobject]$locationLabels) -Compress } else { '{}' }
+$functionLabelsJson = if ($functionLabels.Count -gt 0) { ConvertTo-Json -InputObject ([pscustomobject]$functionLabels) -Compress } else { '{}' }
 $outputPath = Join-Path $PSScriptRoot '..\js\estatisticas-cargos.js'
-Set-Content -LiteralPath $outputPath -Value "const positionsData = $json;`nconst functionData = $functionJson;" -Encoding UTF8
+Set-Content -LiteralPath $outputPath -Value "const positionsData = $json;`nconst functionData = $functionJson;`nconst locationLabels = $locationLabelsJson;`nconst functionLabels = $functionLabelsJson;" -Encoding UTF8
 Write-Output "Registros: $($rows.Count); lotacoes: $(@($aggregated | Group-Object lotacao).Count); combinacoes: $($aggregated.Count)."
