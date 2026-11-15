@@ -71,6 +71,13 @@ function render() {
   document.querySelector('#breakdown-body').innerHTML = rows.map(([type, label, key]) => `<tr class="${type}"><th scope="row">${label}</th>${results.map(result => `<td>${formatNumber.format(result[key])}</td>`).join('')}</tr>`).join('');
 }
 
-form.addEventListener('input', render);
+form.addEventListener('input', event => {
+  if (event.target.checked && event.target.id === 'oldRegime') {
+    document.getElementById('prevcom').checked = false;
+  } else if (event.target.checked && event.target.id === 'prevcom') {
+    document.getElementById('oldRegime').checked = false;
+  }
+  render();
+});
 document.querySelector('#reset').addEventListener('click', resetForm);
 resetForm();
