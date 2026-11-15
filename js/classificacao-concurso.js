@@ -17,7 +17,17 @@ const ContestRanking = (() => {
     });
     return updated;
   }
-  return { calculate };
+  function findWithdrawals(results, quotaGroups, isAppointed) {
+    const latestAppointedRanks = quotaGroups.map(group => results.reduce((latest, candidate) => {
+      if (!Number.isFinite(candidate.classificacao) || !group.statuses.has(candidate.situacao) || !isAppointed(candidate)) return latest;
+      return Math.max(latest, candidate.classificacao);
+    }, -Infinity));
+    return new Set(results.filter(candidate => Number.isFinite(candidate.classificacao) &&
+      !isAppointed(candidate) &&
+      quotaGroups.some((group, index) => group.statuses.has(candidate.situacao) && latestAppointedRanks[index] > candidate.classificacao)
+    ));
+  }
+  return { calculate, findWithdrawals };
 })();
 
 if (typeof module !== 'undefined') module.exports = ContestRanking;

@@ -1,7 +1,10 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
 const vm = require('node:vm');
-const { calculate } = require('./classificacao-concurso.js');
+const ContestRanking = require('./classificacao-concurso.js');
+const { calculate, findWithdrawals } = ContestRanking;
+const readProjectFile = fileName => fs.readFileSync(path.join(__dirname, fileName), 'utf8');
 const statuses = new Set(['Aprovado', 'Aprovado PCD', 'Aprovado PCD/Negro', 'Aprovado Negro']);
 const countStatuses = results => results.reduce((counts, result) => {
   counts[result.situacao] = (counts[result.situacao] || 0) + 1;
@@ -19,8 +22,30 @@ const ranked = calculate(sample);
 assert.deepEqual(ranked.map(result => result.classificacao), [3, 1, 1, 4, null]);
 assert.deepEqual(ranked.map(result => result.final), [78.5, 78.5, 78.5, 78, null]);
 assert.equal(sample[0].classificacao, undefined);
+const quotaGroups = [
+  { statuses: new Set(['Aprovado']) },
+  { statuses: new Set(['Aprovado PCD', 'Aprovado PCD/Negro']) },
+  { statuses: new Set(['Aprovado Negro', 'Aprovado PCD/Negro']) }
+];
+const withdrawalCandidates = [
+  { classificacao: 1, situacao: 'Aprovado' },
+  { classificacao: 2, situacao: 'Aprovado PCD/Negro' },
+  { classificacao: 3, situacao: 'Aprovado Negro' },
+  { classificacao: 4, situacao: 'Aprovado PCD' },
+  { classificacao: 5, situacao: 'Aprovado' },
+  { classificacao: 5, situacao: 'Aprovado' }
+];
+const appointedForWithdrawal = new Set([withdrawalCandidates[2], withdrawalCandidates[4]]);
+const isAppointedForWithdrawal = candidate => appointedForWithdrawal.has(candidate);
+const withdrawals = findWithdrawals(withdrawalCandidates, quotaGroups, isAppointedForWithdrawal);
+assert.ok(withdrawals.has(withdrawalCandidates[0]));
+assert.ok(withdrawals.has(withdrawalCandidates[1]));
+assert.ok(!withdrawals.has(withdrawalCandidates[3]));
+assert.ok(!withdrawals.has(withdrawalCandidates[4]));
+assert.ok(!withdrawals.has(withdrawalCandidates[5]));
+assert.ok(!findWithdrawals([{ classificacao: null, situacao: 'Aprovado' }], quotaGroups, () => false).size);
 
-const data = vm.runInNewContext(`${fs.readFileSync('resultado-concurso.js', 'utf8')}\ncontestData`);
+const data = vm.runInNewContext(`${readProjectFile('resultado-concurso.js')}\ncontestData`);
 assert.deepEqual(Array.from(data, career => career.resultados.length), [135, 87, 73, 34, 155, 25]);
 for (const career of data) {
   career.resultados.forEach((result, index) => {
@@ -44,7 +69,7 @@ assert.equal(data[5].resultados[0].nome, 'Roberta Gouveia de Rezende Pereira');
 assert.equal(data[5].resultados[0].titulos, 3);
 assert.equal(data[5].resultados[0].final, 102.5);
 
-const reapplication = vm.runInNewContext(`${fs.readFileSync('resultado-reaplicacao.js', 'utf8')}\ncontestReapplicationData`);
+const reapplication = vm.runInNewContext(`${readProjectFile('resultado-reaplicacao.js')}\ncontestReapplicationData`);
 const expected = new Map([
   ['ANALISTA DE CONTROLE EXTERNO-CONTAS PÚBLICAS', [765, 306]],
   ['ANALISTA DE GESTÃO-ADMINISTRAÇÃO', [1533, 66]],
@@ -89,7 +114,9 @@ assert.deepEqual(countStatuses(reapplication.flatMap(career => career.resultados
 });
 assert.equal(expected.size, 0);
 
-const appointments = vm.runInNewContext(`${fs.readFileSync('nomeacoes-concurso.js', 'utf8')}\nappointedCandidates`);
+const contestRankingBrowser = vm.runInNewContext(`${readProjectFile('classificacao-concurso.js')}\nContestRanking`);
+assert.equal(typeof contestRankingBrowser.findWithdrawals, 'function');
+const appointments = vm.runInNewContext(`${readProjectFile('nomeacoes-concurso.js')}\nappointedCandidates`);
 const officialCandidates = new Set(data.flatMap(career => career.resultados.map(result => `${career.cargo}|${result.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR')}`)));
 assert.equal(appointments.length, 41);
 assert.equal(new Set(appointments.map(appointment => `${appointment.cargo}|${appointment.nome}`)).size, appointments.length);
@@ -98,7 +125,7 @@ appointments.forEach(appointment => {
   assert.ok(appointment.portaria);
   assert.ok(officialCandidates.has(`${appointment.cargo}|${appointment.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR')}`));
 });
-const vacancies = vm.runInNewContext(`${fs.readFileSync('vagas-concurso.js', 'utf8')}\nvacancyData`);
+const vacancies = vm.runInNewContext(`${readProjectFile('vagas-concurso.js')}\nvacancyData`);
 assert.equal(vacancies.length, 10);
 assert.deepEqual(vacancies.reduce((totals, vacancy) => ({
   total: totals.total + vacancy.vagas_quadro_total,

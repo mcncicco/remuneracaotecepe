@@ -1,4 +1,5 @@
 const fs = require('node:fs');
+const path = require('node:path');
 const vm = require('node:vm');
 
 const expectedCounts = new Map([
@@ -6,7 +7,7 @@ const expectedCounts = new Map([
   [759, 9], [760, 1], [761, 2], [762, 7], [763, 2],
   [764, 1], [765, 4], [766, 1], [767, 1], [768, 1]
 ]);
-const contestData = vm.runInNewContext(`${fs.readFileSync('resultado-concurso.js', 'utf8')}\ncontestData`);
+const contestData = vm.runInNewContext(`${fs.readFileSync(path.join(__dirname, 'resultado-concurso.js'), 'utf8')}\ncontestData`);
 const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
 const acts = new Map();
 
@@ -44,12 +45,13 @@ function parseCsvRow(line) {
   return cells;
 }
 
-function readCsv(path) {
-  const lines = fs.readFileSync(path, 'utf8').replace(/^\uFEFF/, '').trimEnd().split(/\r?\n/);
+function readCsv(fileName) {
+  const filePath = path.join(__dirname, '..', 'csv', fileName);
+  const lines = fs.readFileSync(filePath, 'utf8').replace(/^\uFEFF/, '').trimEnd().split(/\r?\n/);
   const headers = parseCsvRow(lines.shift());
   return lines.map((line, index) => {
     const cells = parseCsvRow(line);
-    if (cells.length !== headers.length) throw new Error(`Quantidade inesperada de colunas na linha ${index + 2} de ${path}.`);
+    if (cells.length !== headers.length) throw new Error(`Quantidade inesperada de colunas na linha ${index + 2} de ${filePath}.`);
     return Object.fromEntries(headers.map((header, cellIndex) => [header, cells[cellIndex]]));
   });
 }
@@ -68,7 +70,7 @@ function buildSiteData(appointments) {
 }
 
 function writeSiteData(data) {
-  fs.writeFileSync('nomeacoes-concurso.js', `const appointedCandidates = ${JSON.stringify(data)};\n`, 'utf8');
+  fs.writeFileSync(path.join(__dirname, 'nomeacoes-concurso.js'), `const appointedCandidates = ${JSON.stringify(data)};\n`, 'utf8');
 }
 
 function writeVacancyData() {
@@ -80,7 +82,7 @@ function writeVacancyData() {
     if (!Number.isInteger(value) || value < 0) throw new Error(`Valor invalido em ${column}.`);
     row[column] = value;
   }));
-  fs.writeFileSync('vagas-concurso.js', `const vacancyData = ${JSON.stringify(vacancyData)};\n`, 'utf8');
+  fs.writeFileSync(path.join(__dirname, 'vagas-concurso.js'), `const vacancyData = ${JSON.stringify(vacancyData)};\n`, 'utf8');
 }
 
 if (process.argv.includes('--site-data-only')) {
@@ -163,7 +165,7 @@ if (rows.length !== 41) throw new Error(`Quantidade inesperada de nomeados: ${ro
 const headers = ['Portaria', 'Data do ato', 'Data de publicação', 'Nome', 'Cargo', 'Área', 'Padrão / símbolo', 'Página do PDF'];
 const escapeCsv = value => `"${String(value).replace(/"/g, '""')}"`;
 const csv = [headers, ...rows].map(row => row.map(escapeCsv).join(';')).join('\r\n');
-fs.writeFileSync('nomeacoes-concurso.csv', `\uFEFF${csv}\r\n`, { encoding: 'utf8', flag: 'wx' });
+fs.writeFileSync(path.join(__dirname, '..', 'csv', 'nomeacoes-concurso.csv'), `\uFEFF${csv}\r\n`, { encoding: 'utf8', flag: 'wx' });
 writeSiteData(buildSiteData(Array.from(acts.values()).flatMap(act => act.nomes.map(nome => ({
   Cargo: act.cargo,
   'Área': act.area,

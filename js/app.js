@@ -392,6 +392,14 @@ const vacancyPools = [
   { field: 'vagas_quadro_pcd', editalField: 'edital_vagas_pcd', label: 'PCD', statuses: new Set(['Aprovado PCD', 'Aprovado PCD/Negro']) },
   { field: 'vagas_quadro_ppp', editalField: 'edital_vagas_negros', label: 'Negro/PPP', statuses: new Set(['Aprovado Negro', 'Aprovado PCD/Negro']) }
 ];
+contestCareers.forEach(career => {
+  const withdrawals = ContestRanking.findWithdrawals(
+    career.resultados,
+    vacancyPools,
+    other => appointmentsByCandidate.has(appointmentKey({ fase: career.fase, cargo: career.cargo, nome: other.nome }))
+  );
+  career.resultados.forEach(result => { result.desistencia = withdrawals.has(result); });
+});
 const vacancyTypesByCandidate = new Map();
 
 vacancyData.forEach(vacancy => {
@@ -478,6 +486,9 @@ function renderContest() {
     if (appointment) {
       row.classList.add('appointed');
       row.title = `Nomeado por ${appointment.portaria}`;
+    } else if (item.desistencia) {
+      row.classList.add('withdrawal');
+      row.title = 'Possível desistência inferida: há pessoa da mesma cota nomeada em colocação posterior.';
     } else if (item.vaga) {
       row.classList.add(item.vagaEdital.length ? 'vacancy-edital' : 'vacancy-eligible');
       const vacancyDetails = [

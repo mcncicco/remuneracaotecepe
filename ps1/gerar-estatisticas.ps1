@@ -90,6 +90,6 @@ $functionAggregated = @(
 )
 $json = ConvertTo-Json -InputObject $aggregated -Depth 3 -Compress
 $functionJson = ConvertTo-Json -InputObject $functionAggregated -Depth 3 -Compress
-$outputPath = Join-Path $PSScriptRoot 'estatisticas-cargos.js'
+$outputPath = Join-Path $PSScriptRoot '..\js\estatisticas-cargos.js'
 Set-Content -LiteralPath $outputPath -Value "const positionsData = $json;`nconst functionData = $functionJson;" -Encoding UTF8
 Write-Output "Registros: $($rows.Count); lotacoes: $(@($aggregated | Group-Object lotacao).Count); combinacoes: $($aggregated.Count)."

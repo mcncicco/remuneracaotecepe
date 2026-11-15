@@ -1,4 +1,5 @@
 const fs = require('node:fs');
+const path = require('node:path');
 
 const document = JSON.parse(fs.readFileSync(0, 'utf8'));
 const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -34,5 +35,5 @@ if (careers.size !== 4) throw new Error(`Quantidade inesperada de cargos: ${care
 const headers = ['Cargo / Área', 'Página do PDF', 'Inscrição', 'Nome', 'Nascimento', 'Módulo I', 'Módulo II', 'Módulo III', 'Nota objetiva', 'Situação'];
 const escapeCsv = value => `"${String(value).replace(/"/g, '""')}"`;
 const csv = [headers, ...csvRows].map(row => row.map(escapeCsv).join(';')).join('\r\n');
-fs.writeFileSync('resultado-objetiva-reaplicacao-2025.csv', `\uFEFF${csv}\r\n`, { encoding: 'utf8', flag: 'wx' });
+fs.writeFileSync(path.join(__dirname, '..', 'csv', 'resultado-objetiva-reaplicacao-2025.csv'), `\uFEFF${csv}\r\n`, { encoding: 'utf8', flag: 'wx' });
 console.log(Array.from(careers, ([title, count]) => `${title}: ${count}`).join('\n'));

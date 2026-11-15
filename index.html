@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20261115-1">
+  <link rel="stylesheet" href="css/styles.css?v=20261115-2">
   <style>
     .topbar-inner { height: 64px; }
     .intro { padding-top: 30px; padding-bottom: 24px; }
@@ -64,10 +64,12 @@
     .competition-table thead th:not(:first-child) { width: auto; }
     .competition-table th:nth-child(2), .competition-table td:nth-child(2) { text-align: left; }
     .competition-table tbody tr.appointed > td { background-color: #e8f3ff; }
+    .competition-table tbody tr.withdrawal > td { background-color: #fde8e7; }
     .competition-table tbody tr.vacancy-eligible > td { background-color: #e8f5e9; }
     .competition-table tbody tr.vacancy-edital > td { background-color: #c8e6c9; }
     .appointment-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; color: #728078; font-size: 12px; }
     .appointment-legend span { width: 14px; height: 14px; border: 1px solid #c5dcf4; background: #e8f3ff; }
+    .appointment-legend .withdrawal-swatch { border-color: #efc8c8; background: #fde8e7; }
     .appointment-legend .vacancy-swatch { border-color: #c8dfca; background: #e8f5e9; }
     .appointment-legend .vacancy-edital-swatch { border-color: #a5c9a7; background: #c8e6c9; }
     .competition-note { margin: 18px 0 0; color: #728078; font-size: 12px; line-height: 1.7; }
@@ -84,14 +86,14 @@
       .competition-filters { grid-template-columns: 1fr; gap: 0; }
     }
   </style>
-  <script defer src="calculator.js?v=20261115-1"></script>
-  <script defer src="estatisticas-cargos.js?v=20261115-1"></script>
-  <script defer src="resultado-concurso.js?v=20261115-3"></script>
-  <script defer src="resultado-reaplicacao.js?v=20261115-3"></script>
-  <script defer src="nomeacoes-concurso.js?v=20261115-1"></script>
-  <script defer src="vagas-concurso.js?v=20261115-1"></script>
-  <script defer src="classificacao-concurso.js?v=20261115-1"></script>
-  <script defer src="app.js?v=20261115-10"></script>
+  <script defer src="js/calculator.js?v=20261115-3"></script>
+  <script defer src="js/estatisticas-cargos.js?v=20261115-2"></script>
+  <script defer src="js/resultado-concurso.js?v=20261115-4"></script>
+  <script defer src="js/resultado-reaplicacao.js?v=20261115-4"></script>
+  <script defer src="js/nomeacoes-concurso.js?v=20261115-2"></script>
+  <script defer src="js/vagas-concurso.js?v=20261115-2"></script>
+  <script defer src="js/classificacao-concurso.js?v=20261115-3"></script>
+  <script defer src="js/app.js?v=20261115-11"></script>
 </head>
 <body>
   <header class="topbar">
@@ -124,7 +126,7 @@
           <label class="toggle-row" for="health50"><span>Mais de 50 anos ou PCD <small>Adicional no auxílio-saúde</small></span><span class="switch"><input id="health50" type="checkbox"><span></span></span></label>
           <label class="toggle-row" for="inflation"><span>Reajuste pela inflação <small>5% sobre vencimento e gratificação</small></span><span class="switch"><input id="inflation" type="checkbox"><span></span></span></label>
           <details class="advanced"><summary>Valores de referência <span>+</span></summary><div class="advanced-fields">
-            <div class="field"><label for="ceiling">Teto constitucional STF (R$)</label><input id="ceiling" type="number" min="0" step="0.01" inputmode="decimal"></div>
+            <div class="field"><label for="ceiling">Teto constitucional 90,25% do STF (R$)</label><input id="ceiling" type="number" min="0" step="0.01" inputmode="decimal"></div>
             <div class="field"><label for="rgps">Teto RGPS (R$)</label><input id="rgps" type="number" min="0" step="0.01" inputmode="decimal"></div>
             <div class="field"><label for="taxDeduction">Parcela a deduzir IR (R$)</label><input id="taxDeduction" type="number" min="0" step="0.01" inputmode="decimal"></div>
             <div class="field"><label for="fieldAmount">Verba de campo (R$)</label><input id="fieldAmount" type="number" min="0" step="0.01" inputmode="decimal"></div>
@@ -217,7 +219,7 @@
         <div class="field"><label for="contest-search">Nome</label><input id="contest-search" type="search" placeholder="Buscar candidato"></div>
       </div>
       <p class="competition-stage" id="contest-stage"></p>
-      <p class="appointment-legend"><span aria-hidden="true"></span>Linha azul-clara: nomeado por portaria.<span class="vacancy-edital-swatch" aria-hidden="true"></span>Linha verde mais escura: não nomeado e dentro das vagas ofertadas no edital.<span class="vacancy-swatch" aria-hidden="true"></span>Linha verde-clara: não nomeado e dentro das vagas atuais que excedem o edital. A coluna “Tipo de vaga” indica a modalidade.</p>
+      <p class="appointment-legend"><span aria-hidden="true"></span>Linha azul-clara: nomeado por portaria.<span class="withdrawal-swatch" aria-hidden="true"></span>Linha vermelho-clara: possível desistência.<span class="vacancy-edital-swatch" aria-hidden="true"></span>Linha verde mais escura: não nomeado mas dentro das vagas ofertadas no edital.<span class="vacancy-swatch" aria-hidden="true"></span>Linha verde-clara: não nomeado mas dentro dos cargos vagos existentes.</p>
       <div class="positions-summary"><p id="contest-count" role="status"></p></div>
       <div class="table-scroll" tabindex="0" aria-label="Resultados do concurso por cargo"><table class="competition-table"><thead><tr><th scope="col">CLASSIFICAÇÃO</th><th scope="col">NOME</th><th scope="col">NASCIMENTO</th><th scope="col">OBJETIVA</th><th scope="col">DISCURSIVA</th><th scope="col">TÍTULOS</th><th scope="col">NOTA FINAL</th><th scope="col">SITUAÇÃO</th><th scope="col">TIPO DE VAGA</th></tr></thead><tbody id="contest-body"></tbody></table></div>
       <p class="table-hint">Deslize a tabela para ver todas as colunas.</p>

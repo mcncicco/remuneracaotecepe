@@ -1,4 +1,5 @@
 const fs = require('node:fs');
+const path = require('node:path');
 
 const document = JSON.parse(fs.readFileSync(0, 'utf8'));
 const careers = new Map();
@@ -44,8 +45,8 @@ if (process.argv.includes('--csv')) {
   const headers = ['Cargo / Área', 'Classificação', 'Inscrição', 'Nome', 'Nascimento', 'Nota objetiva', 'Nota discursiva', 'Nota de títulos', 'Nota final', 'Situação'];
   const escapeCsv = value => `"${String(value).replace(/"/g, '""')}"`;
   const csv = [headers, ...csvRows].map(row => row.map(escapeCsv).join(';')).join('\r\n');
-  fs.writeFileSync('resultado-concurso-2025.csv', `\uFEFF${csv}\r\n`, { encoding: 'utf8', flag: 'wx' });
+  fs.writeFileSync(path.join(__dirname, '..', 'csv', 'resultado-concurso-2025.csv'), `\uFEFF${csv}\r\n`, { encoding: 'utf8', flag: 'wx' });
 } else {
-  fs.writeFileSync('resultado-concurso.js', `const contestData = ${JSON.stringify(data)};\n`, 'utf8');
+  fs.writeFileSync(path.join(__dirname, 'resultado-concurso.js'), `const contestData = ${JSON.stringify(data)};\n`, 'utf8');
 }
 console.log(data.map(item => `${item.cargo}: ${item.resultados.length}`).join('\n'));

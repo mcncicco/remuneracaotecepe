@@ -65,5 +65,5 @@ $data = @(
 )
 if ($data.Count -ne 4) { throw 'Quantidade inesperada de cargos na reaplicacao.' }
 $json = ConvertTo-Json -InputObject $data -Depth 5 -Compress
-Set-Content -LiteralPath (Join-Path $PSScriptRoot 'resultado-reaplicacao.js') -Value "const contestReapplicationData = $json;" -Encoding UTF8
+Set-Content -LiteralPath (Join-Path $PSScriptRoot '..\js\resultado-reaplicacao.js') -Value "const contestReapplicationData = $json;" -Encoding UTF8
 Write-Output "Objetiva: $($objective.Count); discursiva: $($written.Count); cargos: $($data.Count)."
