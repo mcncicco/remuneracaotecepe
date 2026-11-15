@@ -111,6 +111,13 @@ statisticsTabs.forEach((tab, index) => {
 const positionsLocation = document.querySelector('#positions-location');
 const positionsRole = document.querySelector('#positions-role');
 const positionsGrade = document.querySelector('#positions-grade');
+const positionsGrouping = {
+  lotacao: document.querySelector('#positions-group-location'),
+  cargo: document.querySelector('#positions-group-role'),
+  classe: document.querySelector('#positions-group-grade')
+};
+const positionDimensions = ['lotacao', 'cargo', 'classe'];
+const positionsTable = document.querySelector('.positions-table');
 const positionsBody = document.querySelector('#positions-body');
 const positionsPrev = document.querySelector('#positions-prev');
 const positionsNext = document.querySelector('#positions-next');
@@ -200,7 +207,7 @@ function renderVacancies() {
 }
 renderVacancies();
 
-const sortPositions = createStatisticsSorter(document.querySelector('.positions-table'), [
+const sortPositions = createStatisticsSorter(positionsTable, [
   { value: row => row.lotacao },
   { value: row => row.cargo },
   { value: row => row.classe || 'Não informada' },
@@ -230,15 +237,37 @@ const sortPositions = createStatisticsSorter(document.querySelector('.positions-
 });
 
 function renderPositions() {
-  const filtered = sortPositions(positionsData.filter(row => (!positionsLocation.value || row.lotacao === positionsLocation.value) && (!positionsRole.value || row.cargo === positionsRole.value) && (!positionsGrade.value || row.classe === (positionsGrade.value === '__sem_classe__' ? '' : positionsGrade.value))));
+  const groupedDimensions = positionDimensions.filter(dimension => positionsGrouping[dimension].checked);
+  const selectedRows = positionsData.filter(row => (!positionsLocation.value || row.lotacao === positionsLocation.value) && (!positionsRole.value || row.cargo === positionsRole.value) && (!positionsGrade.value || row.classe === (positionsGrade.value === '__sem_classe__' ? '' : positionsGrade.value)));
+  let rows = selectedRows;
+  if (groupedDimensions.length) {
+    const groups = new Map();
+    selectedRows.forEach(item => {
+      const key = JSON.stringify(positionDimensions.filter(dimension => !groupedDimensions.includes(dimension)).map(dimension => item[dimension]));
+      if (!groups.has(key)) {
+        const group = { ...item, quantidade: 0, campo: 0 };
+        groupedDimensions.forEach(dimension => { group[dimension] = ''; });
+        groups.set(key, group);
+      }
+      const group = groups.get(key);
+      group.quantidade += item.quantidade;
+      group.campo += item.campo;
+    });
+    rows = [...groups.values()];
+  }
+  positionsTable.querySelectorAll('thead th').forEach((header, index) => {
+    header.hidden = index < positionDimensions.length && groupedDimensions.includes(positionDimensions[index]);
+  });
+  const filtered = sortPositions(rows);
   const pages = Math.max(1, Math.ceil(filtered.length / positionsPageSize));
   positionsPage = Math.min(positionsPage, pages - 1);
   positionsBody.replaceChildren();
   filtered.slice(positionsPage * positionsPageSize, (positionsPage + 1) * positionsPageSize).forEach(item => {
     const row = document.createElement('tr');
-    [item.lotacao, item.cargo, item.classe || 'Não informada', item.quantidade, item.campo].forEach(value => {
+    [item.lotacao, item.cargo, item.classe || 'Não informada', item.quantidade, item.campo].forEach((value, index) => {
       const cell = document.createElement('td');
       cell.textContent = value;
+      cell.hidden = index < positionDimensions.length && groupedDimensions.includes(positionDimensions[index]);
       row.append(cell);
     });
     positionsBody.append(row);
@@ -246,12 +275,14 @@ function renderPositions() {
   if (!filtered.length) {
     const row = document.createElement('tr');
     const cell = document.createElement('td');
-    cell.colSpan = 5;
+    cell.colSpan = 5 - groupedDimensions.length;
     cell.textContent = 'Nenhum registro encontrado.';
     row.append(cell);
     positionsBody.append(row);
   }
-  document.querySelector('#positions-count').textContent = `${filtered.length} combinações de cargo, classe e lotação`;
+  document.querySelector('#positions-count').textContent = groupedDimensions.length
+    ? `${filtered.length} combinações agrupadas`
+    : `${filtered.length} combinações de cargo, classe e lotação`;
   const total = filtered.reduce((sum, item) => sum + item.quantidade, 0);
   const fieldTotal = filtered.reduce((sum, item) => sum + item.campo, 0);
   document.querySelector('#positions-total').textContent = `${total.toLocaleString('pt-BR')} registros · ${fieldTotal.toLocaleString('pt-BR')} com campo estimado`;
@@ -264,6 +295,10 @@ function renderPositions() {
   positionsPage = 0;
   renderPositions();
 }));
+Object.values(positionsGrouping).forEach(input => input.addEventListener('change', () => {
+  positionsPage = 0;
+  renderPositions();
+}));
 positionsPrev.addEventListener('click', () => { positionsPage--; renderPositions(); });
 positionsNext.addEventListener('click', () => { positionsPage++; renderPositions(); });
 renderPositions();
@@ -272,9 +307,17 @@ const functionsLocation = document.querySelector('#functions-location');
 const functionsType = document.querySelector('#functions-type');
 const functionsRole = document.querySelector('#functions-role');
 const functionsGrade = document.querySelector('#functions-grade');
+const functionsGrouping = {
+  lotacao: document.querySelector('#functions-group-location'),
+  codigo: document.querySelector('#functions-group-type'),
+  classe: document.querySelector('#functions-group-grade'),
+  cargo: document.querySelector('#functions-group-role')
+};
+const functionsTable = document.querySelector('.functions-table');
 const functionsBody = document.querySelector('#functions-body');
 const functionsPrev = document.querySelector('#functions-prev');
 const functionsNext = document.querySelector('#functions-next');
+const functionsDimensions = ['lotacao', 'cargo', 'classe', 'codigo'];
 let functionsPage = 0;
 
 const functionLabels = {
@@ -323,19 +366,29 @@ Object.keys(functionLabels).filter(code => code !== 'SEM_VALOR').forEach(code =>
   functionsType.append(option);
 });
 
-const sortFunctions = createStatisticsSorter(document.querySelector('.functions-table'), [
+const sortFunctions = createStatisticsSorter(functionsTable, [
   { value: row => row.lotacao },
+  { value: row => row.cargo },
+  { value: row => row.classe || 'Não informada' },
   { value: row => row.codigo === 'NAO_IDENTIFICADA' || row.codigo === 'SEM_VALOR' ? '—' : row.codigo },
-  { value: row => functionLabels[row.codigo] },
   { value: row => row.quantidade, numeric: true }
-], 3, () => { functionsPage = 0; renderFunctions(); });
+], 4, () => { functionsPage = 0; renderFunctions(); });
 
 function renderFunctions() {
   const groups = new Map();
-  functionData.filter(row => row.codigo !== 'SEM_VALOR' && (!functionsLocation.value || row.lotacao === functionsLocation.value) && (!functionsType.value || row.codigo === functionsType.value) && (!functionsRole.value || row.cargo === functionsRole.value) && (!functionsGrade.value || row.classe === (functionsGrade.value === '__sem_classe__' ? '' : functionsGrade.value))).forEach(row => {
-    const key = JSON.stringify([row.lotacao, row.codigo]);
-    if (!groups.has(key)) groups.set(key, { lotacao: row.lotacao, codigo: row.codigo, quantidade: 0 });
+  const groupedDimensions = functionsDimensions.filter(dimension => functionsGrouping[dimension].checked);
+  functionData.filter(row => row.codigo !== 'SEM_VALOR' && (!functionsLocation.value || row.lotacao === functionsLocation.value) && (!functionsType.value || row.codigo === functionsType.value) && (!functionsRole.value || functionsGrouping.cargo.checked || row.cargo === functionsRole.value) && (!functionsGrade.value || functionsGrouping.classe.checked || row.classe === (functionsGrade.value === '__sem_classe__' ? '' : functionsGrade.value))).forEach(row => {
+    const key = JSON.stringify(functionsDimensions.filter(dimension => !groupedDimensions.includes(dimension)).map(dimension => row[dimension]));
+    if (!groups.has(key)) {
+      const group = { ...row, quantidade: 0 };
+      groupedDimensions.forEach(dimension => { group[dimension] = ''; });
+      groups.set(key, group);
+    }
     groups.get(key).quantidade += row.quantidade;
+  });
+  functionsTable.querySelectorAll('thead th').forEach((header, index) => {
+    const dimension = functionsDimensions[index];
+    header.hidden = dimension ? groupedDimensions.includes(dimension) : false;
   });
   const filtered = sortFunctions([...groups.values()]);
   const pages = Math.max(1, Math.ceil(filtered.length / positionsPageSize));
@@ -344,9 +397,11 @@ function renderFunctions() {
   filtered.slice(functionsPage * positionsPageSize, (functionsPage + 1) * positionsPageSize).forEach(item => {
     const row = document.createElement('tr');
     const code = item.codigo === 'NAO_IDENTIFICADA' || item.codigo === 'SEM_VALOR' ? '—' : item.codigo;
-    [item.lotacao, code, functionLabels[item.codigo], item.quantidade].forEach(value => {
+    [item.lotacao, item.cargo, item.classe || 'Não informada', code, item.quantidade].forEach((value, index) => {
       const cell = document.createElement('td');
       cell.textContent = value;
+      const dimension = functionsDimensions[index];
+      cell.hidden = dimension ? groupedDimensions.includes(dimension) : false;
       row.append(cell);
     });
     functionsBody.append(row);
@@ -354,12 +409,14 @@ function renderFunctions() {
   if (!filtered.length) {
     const row = document.createElement('tr');
     const cell = document.createElement('td');
-    cell.colSpan = 4;
+    cell.colSpan = 5 - groupedDimensions.length;
     cell.textContent = 'Nenhum registro encontrado.';
     row.append(cell);
     functionsBody.append(row);
   }
-  document.querySelector('#functions-count').textContent = `${new Set(filtered.map(item => item.lotacao)).size} códigos de lotação`;
+  document.querySelector('#functions-count').textContent = groupedDimensions.length
+    ? `${filtered.length} ${filtered.length === 1 ? 'combinação agrupada' : 'combinações agrupadas'}`
+    : `${filtered.length} ${filtered.length === 1 ? 'combinação' : 'combinações'} de lotação, cargo, classe e função`;
   document.querySelector('#functions-total').textContent = `${filtered.reduce((sum, item) => sum + item.quantidade, 0).toLocaleString('pt-BR')} registros`;
   document.querySelector('#functions-page').textContent = `Página ${functionsPage + 1} de ${pages}`;
   functionsPrev.disabled = functionsPage === 0;
@@ -367,6 +424,7 @@ function renderFunctions() {
 }
 
 [functionsLocation, functionsType, functionsRole, functionsGrade].forEach(input => input.addEventListener('input', () => { functionsPage = 0; renderFunctions(); }));
+Object.values(functionsGrouping).forEach(input => input.addEventListener('change', () => { functionsPage = 0; renderFunctions(); }));
 functionsPrev.addEventListener('click', () => { functionsPage--; renderFunctions(); });
 functionsNext.addEventListener('click', () => { functionsPage++; renderFunctions(); });
 renderFunctions();
