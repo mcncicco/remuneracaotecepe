@@ -13,12 +13,62 @@
   <style>
     .topbar-inner { height: 64px; }
     .intro { padding-top: 30px; padding-bottom: 24px; }
+    .statistics { padding-top: 60px; }
+    .statistics h2 { margin: 8px 0 24px; font-size: 22px; }
+    .statistics-tabs { display: flex; border-bottom: 1px solid var(--line); }
+    .statistics-tab { flex: 1; min-height: 52px; padding: 10px 16px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: #64746b; font-weight: 700; text-align: left; }
+    .statistics-tab[aria-selected="true"] { border-bottom-color: var(--green); color: var(--green); }
+    .statistics-tab:hover { color: var(--green); }
+    .statistics-tab:focus-visible { outline: 2px solid var(--coral); outline-offset: -2px; }
+    .statistics-panel { min-height: 110px; padding: 24px 16px; }
+    .statistics-panel h3 { margin: 0 0 10px; font-size: 15px; }
+    .statistics-panel p { margin: 0; color: #728078; font-size: 12px; }
+    .statistics-sort { display: inline-flex; align-items: center; gap: 5px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: inherit; letter-spacing: inherit; }
+    .statistics-sort:hover { color: var(--green); }
+    .statistics-sort:focus-visible { outline: 2px solid var(--coral); outline-offset: 3px; }
+    th[aria-sort="ascending"] .statistics-sort::after { content: "\2191"; }
+    th[aria-sort="descending"] .statistics-sort::after { content: "\2193"; }
+    .vacancies-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 14px; }
+    .vacancies-heading h3 { margin: 0; }
+    .vacancies-total { color: var(--green); font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .vacancies-table { min-width: 760px; }
+    .vacancies-table thead th:not(:first-child) { width: auto; }
+    .vacancies-table th, .vacancies-table td { padding: 11px 12px; }
+    .vacancies-table th:nth-child(2), .vacancies-table td.specialty { text-align: left; }
+    .vacancies-table tbody + tbody { border-top: 1px solid #d5dfd9; }
+    .vacancies-table tbody th { vertical-align: top; font-weight: 700; color: var(--ink); }
+    .vacancies-table .career-total { font-weight: 700; color: var(--green); vertical-align: top; }
+    .vacancies-table tfoot { background: #f0f5f1; font-weight: 700; }
+    .vacancies-table tfoot th, .vacancies-table tfoot td { color: var(--green); }
+    .statistics-panel .vacancies-notes { margin-top: 16px; line-height: 1.7; }
+    .positions-filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr); gap: 16px; margin: 20px 0 4px; }
+    .positions-summary { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: baseline; margin: 0 0 12px; }
+    .positions-summary strong { color: var(--green); }
+    .positions-table { min-width: 850px; }
+    .positions-table thead th:not(:first-child) { width: auto; }
+    .positions-table th:nth-child(2), .positions-table td:nth-child(2), .positions-table th:nth-child(3), .positions-table td:nth-child(3) { text-align: left; }
+    .positions-table td:last-child, .positions-table th:last-child { width: 110px; }
+    .functions-filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 2fr); }
+    .functions-table { min-width: 760px; }
+    .functions-table thead th:not(:first-child) { width: auto; }
+    .functions-table th:nth-child(2), .functions-table td:nth-child(2), .functions-table th:nth-child(3), .functions-table td:nth-child(3) { text-align: left; }
+    .positions-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 14px; }
+    .positions-pagination button { border: 1px solid var(--line); border-radius: 3px; background: #fff; color: var(--green); padding: 8px 12px; font-size: 11px; font-weight: 700; }
+    .positions-pagination button:disabled { color: #aab6ae; cursor: default; }
+    .positions-pagination span { color: #728078; font-size: 11px; }
+    .statistics-panel .positions-note { margin-top: 18px; line-height: 1.7; }
     @media (max-width: 760px) {
       .topbar-inner { height: 58px; }
       .intro { padding-top: 24px; padding-bottom: 20px; }
+      .statistics { padding-top: 40px; }
+      .statistics-tab { padding: 10px 6px; font-size: 11px; }
+      .statistics-panel { padding: 20px 6px; }
+      .positions-filters { grid-template-columns: 1fr; gap: 0; }
+      .functions-filters { grid-template-columns: 1fr; }
     }
   </style>
   <script defer src="calculator.js"></script>
+  <script defer src="estatisticas-cargos.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
@@ -71,6 +121,70 @@
         </section>
       </section>
     </div>
+
+    <section class="statistics wrap" id="estatisticas" aria-labelledby="statistics-title">
+      <p class="kicker">QUADRO DE PESSOAL</p>
+      <h2 id="statistics-title">Estatísticas </h2>
+      <div class="statistics-tabs" role="tablist" aria-label="Estatísticas ">
+        <button class="statistics-tab" type="button" role="tab" id="tab-vacancies" aria-controls="panel-vacancies" aria-selected="true">Cargos vagos</button>
+        <button class="statistics-tab" type="button" role="tab" id="tab-staff" aria-controls="panel-staff" aria-selected="false" tabindex="-1">Servidores por lotação</button>
+        <button class="statistics-tab" type="button" role="tab" id="tab-positions" aria-controls="panel-positions" aria-selected="false" tabindex="-1">Função por lotação</button>
+      </div>
+      <div class="statistics-panel" role="tabpanel" id="panel-vacancies" aria-labelledby="tab-vacancies" tabindex="0">
+        <div class="vacancies-heading"><h3>Cargos vagos por especialidade</h3><span class="vacancies-total">61 vagas no total</span></div>
+        <div class="table-scroll" tabindex="0" aria-label="Tabela de cargos vagos por especialidade">
+          <table class="vacancies-table">
+            <thead><tr><th scope="col">CARGO</th><th scope="col">ESPECIALIDADE</th><th scope="col">VAGAS</th><th scope="col">AC</th><th scope="col">PCD</th><th scope="col">PPP</th><th scope="col">TOTAL DO CARGO</th></tr></thead>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="4">Auditor de Controle Externo</th><td class="specialty">Contas públicas</td><td>14</td><td>10</td><td>1</td><td>3</td><td class="career-total" rowspan="4">19</td></tr>
+              <tr><td class="specialty">Contas públicas de saúde</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+              <tr><td class="specialty">Obras públicas</td><td>1</td><td>1</td><td>0</td><td>0</td></tr>
+              <tr><td class="specialty">Tecnologia da Informação</td><td>4</td><td>2</td><td>1</td><td>1</td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="3">Analista de Controle Externo</th><td class="specialty">Contas públicas</td><td>22</td><td>17</td><td>1</td><td>4</td><td class="career-total" rowspan="3">24</td></tr>
+              <tr><td class="specialty">Obras públicas</td><td>1</td><td>0</td><td>0</td><td>1</td></tr>
+              <tr><td class="specialty">Tecnologia da Informação</td><td>1</td><td>0</td><td>1</td><td>0</td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="2">Analista de Gestão</th><td class="specialty">Administração</td><td>17</td><td>13</td><td>1</td><td>3</td><td class="career-total" rowspan="2">17</td></tr>
+              <tr><td class="specialty">Julgamento</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+            </tbody>
+            <tbody><tr><th scope="rowgroup">Procurador do Tribunal de Contas</th><td class="specialty">—</td><td>1</td><td>0</td><td>1</td><td>0</td><td class="career-total">1</td></tr></tbody>
+            <tfoot><tr><th scope="row" colspan="2">Total</th><td>61</td><td>43</td><td>6</td><td>12</td><td>61</td></tr></tfoot>
+          </table>
+        </div>
+        <p class="table-hint">Deslize a tabela para ver todas as colunas.</p>
+        <p class="vacancies-notes"><strong>AC:</strong> ampla concorrência. <strong>PCD:</strong> pessoas com deficiência. <strong>PPP:</strong> pessoas pretas e pardas.<br>PCD: 5% (a cada 20 vagas, 1 para PCD) ou mínimo estabelecido no edital; arredondamento para cima se a fração restante for maior que 0,5, nos termos do edital.<br>PPP: 20%, com arredondamento para cima se a fração restante for maior que 0,5, nos termos da Resolução TC nº 286, de 28 de maio de 2025.</p>
+      </div>
+      <div class="statistics-panel" role="tabpanel" id="panel-staff" aria-labelledby="tab-staff" tabindex="0" hidden>
+        <h3>Servidores por lotação</h3>
+        <div class="positions-filters">
+          <div class="field"><label for="positions-location">Lotação</label><select id="positions-location"><option value="">Todas as lotações</option></select></div>
+          <div class="field"><label for="positions-role">Cargo</label><select id="positions-role"><option value="">Todos os cargos</option></select></div>
+          <div class="field"><label for="positions-grade">Classe / Faixa</label><select id="positions-grade"><option value="">Todas as classes</option></select></div>
+        </div>
+        <div class="positions-summary"><p id="positions-count" role="status"></p><strong id="positions-total"></strong></div>
+        <div class="table-scroll" tabindex="0" aria-label="Tabela de servidores por lotação"><table class="positions-table"><thead><tr><th scope="col">LOTAÇÃO</th><th scope="col">CARGO</th><th scope="col">CLASSE / FAIXA</th><th scope="col">QUANTIDADE</th><th scope="col">CAMPO ESTIMADO</th></tr></thead><tbody id="positions-body"></tbody></table></div>
+        <p class="table-hint">Deslize a tabela para ver todas as colunas.</p>
+        <div class="positions-pagination"><button type="button" id="positions-prev">Anterior</button><span id="positions-page"></span><button type="button" id="positions-next">Próxima</button></div>
+        <p class="positions-note">Fonte: CSVs de consulta de vencimentos e indenizações fornecidos. A contagem corresponde aos registros dos arquivos, incluindo códigos como APOS, DISP e EXON; não representa necessariamente servidores em exercício ou cargos vagos. Campo estimado conta registros com exatamente R$ 2.415,02 em “Outras Indenizações”: a rubrica não é discriminada e valores somados a outras indenizações não são identificados.</p>
+      </div>
+      <div class="statistics-panel" role="tabpanel" id="panel-positions" aria-labelledby="tab-positions" tabindex="0" hidden>
+        <h3>Função gratificada / cargo em comissão por lotação</h3>
+        <div class="positions-filters functions-filters">
+          <div class="field"><label for="functions-location">Lotação</label><select id="functions-location"><option value="">Todas as lotações</option></select></div>
+          <div class="field"><label for="functions-type">Função compatível</label><select id="functions-type"><option value="">Todas as classificações</option></select></div>
+          <div class="field"><label for="functions-grade">Classe / Faixa</label><select id="functions-grade"><option value="">Todas as classes</option></select></div>
+          <div class="field"><label for="functions-role">Cargo</label><select id="functions-role"><option value="">Todos os cargos</option></select></div>
+        </div>
+        <div class="positions-summary"><p id="functions-count" role="status"></p><strong id="functions-total"></strong></div>
+        <div class="table-scroll" tabindex="0" aria-label="Tabela de funções compatíveis por lotação"><table class="functions-table"><thead><tr><th scope="col">LOTAÇÃO</th><th scope="col">SÍMBOLO COMPATÍVEL</th><th scope="col">FUNÇÃO COMPATÍVEL</th><th scope="col">REGISTROS</th></tr></thead><tbody id="functions-body"></tbody></table></div>
+        <p class="table-hint">Deslize a tabela para ver todas as colunas.</p>
+        <div class="positions-pagination"><button type="button" id="functions-prev">Anterior</button><span id="functions-page"></span><button type="button" id="functions-next">Próxima</button></div>
+        <p class="positions-note">Fonte: CSV de consulta de vencimentos e tabela de funções fornecidos. A identificação é estimada por correspondência exata de valor e não confirma a função exercida. O valor de R$ 3.119,86 corresponde tanto a TC-FGS-1 quanto a TC-FGA-3; valores diferentes da tabela ficam como não identificados. Registros com valor zero não são exibidos.</p>
+      </div>
+    </section>
 
     <section class="about wrap" id="fontes"><div><p class="kicker">TRANSPARÊNCIA</p><h2>Sobre esta simulação<span>.</span></h2></div><div class="about-copy"><p>Os valores e as fórmulas foram reproduzidos da planilha <strong>Simulador TCE PE R6</strong>, incluindo suas tabelas de progressão e parâmetros de cálculo. A aba “Dados” da planilha não informa links para fontes legais.</p><p>Esta é uma ferramenta independente e informativa, sem vínculo oficial com o TCE-PE. Os valores podem estar desatualizados e não substituem a consulta às normas e à folha de pagamento. No regime antigo, a planilha exibe o abate-teto, mas não o soma aos descontos; também não deduz a PREVCOM da base do IR.</p></div></section>
   </main>

@@ -81,3 +81,289 @@ form.addEventListener('input', event => {
 });
 document.querySelector('#reset').addEventListener('click', resetForm);
 resetForm();
+
+const statisticsTabs = Array.from(document.querySelectorAll('.statistics-tab'));
+
+function selectStatisticsTab(selectedTab) {
+  statisticsTabs.forEach(tab => {
+    const selected = tab === selectedTab;
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+    document.getElementById(tab.getAttribute('aria-controls')).hidden = !selected;
+  });
+}
+
+statisticsTabs.forEach((tab, index) => {
+  tab.addEventListener('click', () => selectStatisticsTab(tab));
+  tab.addEventListener('keydown', event => {
+    let nextIndex;
+    if (event.key === 'ArrowRight') nextIndex = (index + 1) % statisticsTabs.length;
+    else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + statisticsTabs.length) % statisticsTabs.length;
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = statisticsTabs.length - 1;
+    else return;
+    event.preventDefault();
+    selectStatisticsTab(statisticsTabs[nextIndex]);
+    statisticsTabs[nextIndex].focus();
+  });
+});
+
+const positionsLocation = document.querySelector('#positions-location');
+const positionsRole = document.querySelector('#positions-role');
+const positionsGrade = document.querySelector('#positions-grade');
+const positionsBody = document.querySelector('#positions-body');
+const positionsPrev = document.querySelector('#positions-prev');
+const positionsNext = document.querySelector('#positions-next');
+const positionsPageSize = 10;
+let positionsPage = 0;
+
+function createStatisticsSorter(table, columns, initialColumn, onChange) {
+  const headers = Array.from(table.querySelectorAll('thead th'));
+  const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
+  let column = initialColumn;
+  let direction = -1;
+
+  function updateHeaders() {
+    headers.forEach((header, index) => {
+      if (index === column) header.setAttribute('aria-sort', direction === 1 ? 'ascending' : 'descending');
+      else header.removeAttribute('aria-sort');
+    });
+  }
+
+  headers.forEach((header, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'statistics-sort';
+    button.textContent = header.textContent;
+    button.addEventListener('click', () => {
+      direction = column === index ? -direction : (columns[index].numeric ? -1 : 1);
+      column = index;
+      updateHeaders();
+      onChange();
+    });
+    header.replaceChildren(button);
+  });
+  updateHeaders();
+
+  return rows => rows.sort((first, second) => {
+    const firstValue = columns[column].value(first);
+    const secondValue = columns[column].value(second);
+    return direction * (columns[column].numeric ? firstValue - secondValue : collator.compare(firstValue, secondValue));
+  });
+}
+
+const vacanciesTable = document.querySelector('.vacancies-table');
+const vacanciesData = Array.from(vacanciesTable.tBodies).flatMap(group => {
+  const cargo = group.querySelector('th[scope="rowgroup"]').textContent;
+  const totalCargo = Number(group.querySelector('.career-total').textContent);
+  return Array.from(group.rows).map(row => {
+    const specialty = row.querySelector('.specialty');
+    const counts = [];
+    let cell = specialty.nextElementSibling;
+    for (let index = 0; index < 4; index++) {
+      counts.push(Number(cell.textContent));
+      cell = cell.nextElementSibling;
+    }
+    return { cargo, especialidade: specialty.textContent, vagas: counts[0], ac: counts[1], pcd: counts[2], ppp: counts[3], totalCargo };
+  });
+});
+Array.from(vacanciesTable.tBodies).forEach(group => group.remove());
+const vacanciesBody = document.createElement('tbody');
+vacanciesTable.insertBefore(vacanciesBody, vacanciesTable.tFoot);
+const sortVacancies = createStatisticsSorter(vacanciesTable, [
+  { value: row => row.cargo },
+  { value: row => row.especialidade },
+  { value: row => row.vagas, numeric: true },
+  { value: row => row.ac, numeric: true },
+  { value: row => row.pcd, numeric: true },
+  { value: row => row.ppp, numeric: true },
+  { value: row => row.totalCargo, numeric: true }
+], 2, renderVacancies);
+
+function renderVacancies() {
+  vacanciesBody.replaceChildren();
+  sortVacancies([...vacanciesData]).forEach(item => {
+    const row = document.createElement('tr');
+    [item.cargo, item.especialidade, item.vagas, item.ac, item.pcd, item.ppp, item.totalCargo].forEach((value, index) => {
+      const cell = document.createElement(index === 0 ? 'th' : 'td');
+      if (index === 0) cell.scope = 'row';
+      if (index === 1) cell.className = 'specialty';
+      if (index === 6) cell.className = 'career-total';
+      cell.textContent = value;
+      row.append(cell);
+    });
+    vacanciesBody.append(row);
+  });
+}
+renderVacancies();
+
+const sortPositions = createStatisticsSorter(document.querySelector('.positions-table'), [
+  { value: row => row.lotacao },
+  { value: row => row.cargo },
+  { value: row => row.classe || 'Não informada' },
+  { value: row => row.quantidade, numeric: true },
+  { value: row => row.campo, numeric: true }
+], 3, () => { positionsPage = 0; renderPositions(); });
+
+[...new Set(positionsData.map(row => row.lotacao))].sort((first, second) => first.localeCompare(second, 'pt-BR', { numeric: true })).forEach(location => {
+  const option = document.createElement('option');
+  option.value = location;
+  option.textContent = location;
+  positionsLocation.append(option);
+});
+
+[...new Set(positionsData.map(row => row.cargo))].sort((first, second) => first.localeCompare(second, 'pt-BR')).forEach(role => {
+  const option = document.createElement('option');
+  option.value = role;
+  option.textContent = role;
+  positionsRole.append(option);
+});
+
+[...new Set(positionsData.map(row => row.classe))].sort((first, second) => first.localeCompare(second, 'pt-BR', { numeric: true })).forEach(grade => {
+  const option = document.createElement('option');
+  option.value = grade || '__sem_classe__';
+  option.textContent = grade || 'Não informada';
+  positionsGrade.append(option);
+});
+
+function renderPositions() {
+  const filtered = sortPositions(positionsData.filter(row => (!positionsLocation.value || row.lotacao === positionsLocation.value) && (!positionsRole.value || row.cargo === positionsRole.value) && (!positionsGrade.value || row.classe === (positionsGrade.value === '__sem_classe__' ? '' : positionsGrade.value))));
+  const pages = Math.max(1, Math.ceil(filtered.length / positionsPageSize));
+  positionsPage = Math.min(positionsPage, pages - 1);
+  positionsBody.replaceChildren();
+  filtered.slice(positionsPage * positionsPageSize, (positionsPage + 1) * positionsPageSize).forEach(item => {
+    const row = document.createElement('tr');
+    [item.lotacao, item.cargo, item.classe || 'Não informada', item.quantidade, item.campo].forEach(value => {
+      const cell = document.createElement('td');
+      cell.textContent = value;
+      row.append(cell);
+    });
+    positionsBody.append(row);
+  });
+  if (!filtered.length) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 5;
+    cell.textContent = 'Nenhum registro encontrado.';
+    row.append(cell);
+    positionsBody.append(row);
+  }
+  document.querySelector('#positions-count').textContent = `${filtered.length} combinações de cargo, classe e lotação`;
+  const total = filtered.reduce((sum, item) => sum + item.quantidade, 0);
+  const fieldTotal = filtered.reduce((sum, item) => sum + item.campo, 0);
+  document.querySelector('#positions-total').textContent = `${total.toLocaleString('pt-BR')} registros · ${fieldTotal.toLocaleString('pt-BR')} com campo estimado`;
+  document.querySelector('#positions-page').textContent = `Página ${positionsPage + 1} de ${pages}`;
+  positionsPrev.disabled = positionsPage === 0;
+  positionsNext.disabled = positionsPage === pages - 1;
+}
+
+[positionsLocation, positionsRole, positionsGrade].forEach(input => input.addEventListener('input', () => {
+  positionsPage = 0;
+  renderPositions();
+}));
+positionsPrev.addEventListener('click', () => { positionsPage--; renderPositions(); });
+positionsNext.addEventListener('click', () => { positionsPage++; renderPositions(); });
+renderPositions();
+
+const functionsLocation = document.querySelector('#functions-location');
+const functionsType = document.querySelector('#functions-type');
+const functionsRole = document.querySelector('#functions-role');
+const functionsGrade = document.querySelector('#functions-grade');
+const functionsBody = document.querySelector('#functions-body');
+const functionsPrev = document.querySelector('#functions-prev');
+const functionsNext = document.querySelector('#functions-next');
+let functionsPage = 0;
+
+const functionLabels = {
+  'TC-FGG': 'Função Gratificada de Gerência',
+  'TC-FGS-1 / TC-FGA-3': 'Função Gratificada de Secretaria - 1 ou de Assessoria - 3',
+  'TC-FGS-2': 'Função Gratificada de Secretaria - 2',
+  'TC-FAG-1': 'Função de Apoio Gratificada - 1',
+  'TC-FAG-2': 'Função de Apoio Gratificada - 2',
+  'TC-FAG-3': 'Função de Apoio Gratificada - 3',
+  'TC-FGA-1': 'Função Gratificada de Assessoria - 1',
+  'TC-FGA-2': 'Função Gratificada de Assessoria - 2',
+  'TC-FGE-1': 'Função Gratificada Executiva - 1',
+  'TC-FGE-2': 'Função Gratificada Executiva - 2',
+  'TC-FGE-3': 'Função Gratificada Executiva - 3',
+  'TC-FGE-4': 'Função Gratificada Executiva - 4',
+  'TC-FGE-5': 'Função Gratificada Executiva - 5',
+  'NAO_IDENTIFICADA': 'Valor sem correspondência exata',
+  'SEM_VALOR': 'Valor igual a zero'
+};
+
+[...new Set(functionData.filter(row => row.codigo !== 'SEM_VALOR').map(row => row.lotacao))].sort((first, second) => first.localeCompare(second, 'pt-BR', { numeric: true })).forEach(location => {
+  const option = document.createElement('option');
+  option.value = location;
+  option.textContent = location;
+  functionsLocation.append(option);
+});
+
+[...new Set(functionData.filter(row => row.codigo !== 'SEM_VALOR').map(row => row.cargo))].sort((first, second) => first.localeCompare(second, 'pt-BR')).forEach(role => {
+  const option = document.createElement('option');
+  option.value = role;
+  option.textContent = role;
+  functionsRole.append(option);
+});
+
+[...new Set(functionData.filter(row => row.codigo !== 'SEM_VALOR').map(row => row.classe))].sort((first, second) => first.localeCompare(second, 'pt-BR', { numeric: true })).forEach(grade => {
+  const option = document.createElement('option');
+  option.value = grade || '__sem_classe__';
+  option.textContent = grade || 'Não informada';
+  functionsGrade.append(option);
+});
+
+Object.keys(functionLabels).filter(code => code !== 'SEM_VALOR').forEach(code => {
+  const option = document.createElement('option');
+  option.value = code;
+  option.textContent = code === 'NAO_IDENTIFICADA' || code === 'SEM_VALOR' ? functionLabels[code] : code;
+  functionsType.append(option);
+});
+
+const sortFunctions = createStatisticsSorter(document.querySelector('.functions-table'), [
+  { value: row => row.lotacao },
+  { value: row => row.codigo === 'NAO_IDENTIFICADA' || row.codigo === 'SEM_VALOR' ? '—' : row.codigo },
+  { value: row => functionLabels[row.codigo] },
+  { value: row => row.quantidade, numeric: true }
+], 3, () => { functionsPage = 0; renderFunctions(); });
+
+function renderFunctions() {
+  const groups = new Map();
+  functionData.filter(row => row.codigo !== 'SEM_VALOR' && (!functionsLocation.value || row.lotacao === functionsLocation.value) && (!functionsType.value || row.codigo === functionsType.value) && (!functionsRole.value || row.cargo === functionsRole.value) && (!functionsGrade.value || row.classe === (functionsGrade.value === '__sem_classe__' ? '' : functionsGrade.value))).forEach(row => {
+    const key = JSON.stringify([row.lotacao, row.codigo]);
+    if (!groups.has(key)) groups.set(key, { lotacao: row.lotacao, codigo: row.codigo, quantidade: 0 });
+    groups.get(key).quantidade += row.quantidade;
+  });
+  const filtered = sortFunctions([...groups.values()]);
+  const pages = Math.max(1, Math.ceil(filtered.length / positionsPageSize));
+  functionsPage = Math.min(functionsPage, pages - 1);
+  functionsBody.replaceChildren();
+  filtered.slice(functionsPage * positionsPageSize, (functionsPage + 1) * positionsPageSize).forEach(item => {
+    const row = document.createElement('tr');
+    const code = item.codigo === 'NAO_IDENTIFICADA' || item.codigo === 'SEM_VALOR' ? '—' : item.codigo;
+    [item.lotacao, code, functionLabels[item.codigo], item.quantidade].forEach(value => {
+      const cell = document.createElement('td');
+      cell.textContent = value;
+      row.append(cell);
+    });
+    functionsBody.append(row);
+  });
+  if (!filtered.length) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 4;
+    cell.textContent = 'Nenhum registro encontrado.';
+    row.append(cell);
+    functionsBody.append(row);
+  }
+  document.querySelector('#functions-count').textContent = `${new Set(filtered.map(item => item.lotacao)).size} códigos de lotação`;
+  document.querySelector('#functions-total').textContent = `${filtered.reduce((sum, item) => sum + item.quantidade, 0).toLocaleString('pt-BR')} registros`;
+  document.querySelector('#functions-page').textContent = `Página ${functionsPage + 1} de ${pages}`;
+  functionsPrev.disabled = functionsPage === 0;
+  functionsNext.disabled = functionsPage === pages - 1;
+}
+
+[functionsLocation, functionsType, functionsRole, functionsGrade].forEach(input => input.addEventListener('input', () => { functionsPage = 0; renderFunctions(); }));
+functionsPrev.addEventListener('click', () => { functionsPage--; renderFunctions(); });
+functionsNext.addEventListener('click', () => { functionsPage++; renderFunctions(); });
+renderFunctions();
