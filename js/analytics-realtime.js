@@ -9,7 +9,7 @@
     return;
   }
 
-  const refreshInterval = 30_000;
+  const refreshInterval = 15_000;
 
   async function refreshCount() {
     try {

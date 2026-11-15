@@ -1,6 +1,6 @@
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GA_REALTIME_API_BASE = "https://analyticsdata.googleapis.com/v1beta/properties/";
-const CACHE_TTL_SECONDS = 30;
+const CACHE_TTL_SECONDS = 15;
 const ACTIVE_USERS_SCOPE = "https://www.googleapis.com/auth/analytics.readonly";
 
 let cachedAccessToken;
@@ -53,7 +53,7 @@ export default {
       }
 
       const cacheKey = new Request(
-        `${url.origin}/__cached-realtime-metrics-v3?property=${encodeURIComponent(propertyId)}`,
+        `${url.origin}/__cached-realtime-metrics-v4?property=${encodeURIComponent(propertyId)}`,
       );
       const cachedResponse = await caches.default.match(cacheKey);
       if (cachedResponse) {
