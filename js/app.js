@@ -455,8 +455,7 @@ const sortContest = createStatisticsSorter(document.querySelector('.competition-
   { value: row => row.discursiva, numeric: true },
   { value: row => row.titulos, numeric: true },
   { value: row => row.final, numeric: true },
-  { value: row => row.situacao },
-  { value: row => row.vaga }
+  { value: row => row.situacao }
 ], 0, () => { contestPage = 0; renderContest(); }, 1);
 
 function renderContest() {
@@ -497,7 +496,7 @@ function renderContest() {
       ].filter(Boolean).join('; ');
       row.title = `Não nomeado; dentro do quantitativo (${vacancyDetails}).`;
     }
-    [item.classificacao === null ? '—' : `${item.classificacao}º`, item.nome, item.nascimento, contestScoreFormat.format(item.objetiva), item.discursiva === null ? '—' : contestScoreFormat.format(item.discursiva), item.titulos === null ? '—' : contestScoreFormat.format(item.titulos), item.final === null ? '—' : contestScoreFormat.format(item.final), item.situacao, item.vaga || '—'].forEach((value, index) => {
+    [item.classificacao === null ? '—' : `${item.classificacao}º`, item.nome, item.nascimento, contestScoreFormat.format(item.objetiva), item.discursiva === null ? '—' : contestScoreFormat.format(item.discursiva), item.titulos === null ? '—' : contestScoreFormat.format(item.titulos), item.final === null ? '—' : contestScoreFormat.format(item.final), item.situacao].forEach((value, index) => {
       const cell = document.createElement('td');
       if (!hasTitles && index === 5) cell.hidden = true;
       cell.textContent = value;
@@ -508,7 +507,7 @@ function renderContest() {
   if (!filtered.length) {
     const row = document.createElement('tr');
     const cell = document.createElement('td');
-    cell.colSpan = hasTitles ? 9 : 8;
+    cell.colSpan = hasTitles ? 8 : 7;
     cell.textContent = 'Nenhum resultado encontrado.';
     row.append(cell);
     contestBody.append(row);
