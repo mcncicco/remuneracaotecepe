@@ -2,15 +2,24 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$ObjetivaCsv,
     [Parameter(Mandatory = $true)]
-    [string]$DiscursivaCsv
+    [string]$DiscursivaCsv,
+    [Parameter(Mandatory = $true)]
+    [string]$HeteroidentificacaoCsv,
+    [Parameter(Mandatory = $true)]
+    [string]$PericiaCsv
 )
 
 $roleColumn = 'Cargo / ' + [char]0x00C1 + 'rea'
 $registrationColumn = 'Inscri' + [char]0x00E7 + [char]0x00E3 + 'o'
 $statusColumn = 'Situa' + [char]0x00E7 + [char]0x00E3 + 'o'
+$stageResultColumn = 'Resultado da etapa'
+$notQualified = 'N' + [char]0x00E3 + 'o enquadrado'
+$validStageResults = @('Enquadrado', $notQualified, 'Ausente')
 $objective = @(Import-Csv -LiteralPath $ObjetivaCsv -Delimiter ';' -Encoding UTF8)
 $written = @(Import-Csv -LiteralPath $DiscursivaCsv -Delimiter ';' -Encoding UTF8)
-if ($objective.Count -eq 0 -or $written.Count -eq 0 -or $objective[0].PSObject.Properties.Name -notcontains $roleColumn -or $written[0].PSObject.Properties.Name -notcontains $roleColumn -or $objective[0].PSObject.Properties.Name -notcontains $registrationColumn -or $written[0].PSObject.Properties.Name -notcontains $registrationColumn -or $objective[0].PSObject.Properties.Name -notcontains $statusColumn -or $written[0].PSObject.Properties.Name -notcontains $statusColumn -or $objective[0].PSObject.Properties.Name -notcontains 'Nota objetiva' -or $written[0].PSObject.Properties.Name -notcontains 'Nota discursiva') {
+$heteroidentification = @(Import-Csv -LiteralPath $HeteroidentificacaoCsv -Delimiter ';' -Encoding UTF8)
+$medicalExamination = @(Import-Csv -LiteralPath $PericiaCsv -Delimiter ';' -Encoding UTF8)
+if ($objective.Count -eq 0 -or $written.Count -eq 0 -or $heteroidentification.Count -eq 0 -or $medicalExamination.Count -eq 0 -or $objective[0].PSObject.Properties.Name -notcontains $roleColumn -or $written[0].PSObject.Properties.Name -notcontains $roleColumn -or $objective[0].PSObject.Properties.Name -notcontains $registrationColumn -or $written[0].PSObject.Properties.Name -notcontains $registrationColumn -or $objective[0].PSObject.Properties.Name -notcontains $statusColumn -or $written[0].PSObject.Properties.Name -notcontains $statusColumn -or $objective[0].PSObject.Properties.Name -notcontains 'Nota objetiva' -or $written[0].PSObject.Properties.Name -notcontains 'Nota discursiva' -or $heteroidentification[0].PSObject.Properties.Name -notcontains $registrationColumn -or $medicalExamination[0].PSObject.Properties.Name -notcontains $registrationColumn -or $heteroidentification[0].PSObject.Properties.Name -notcontains $stageResultColumn -or $medicalExamination[0].PSObject.Properties.Name -notcontains $stageResultColumn) {
     throw 'Os CSVs estao vazios ou nao possuem as colunas necessarias.'
 }
 
@@ -40,6 +49,24 @@ foreach ($entry in $written) {
     $writtenById[$registration] = $entry
 }
 
+function New-StageIndex([object[]]$Rows, [string]$Description) {
+    $byId = @{}
+    foreach ($entry in $Rows) {
+        $registration = $entry.$registrationColumn.Trim()
+        $result = $entry.$stageResultColumn.Trim()
+        if (-not $registration -or $byId.ContainsKey($registration) -or $validStageResults -notcontains $result) {
+            throw "Inscricao vazia, duplicada ou resultado invalido em $Description."
+        }
+        $byId[$registration] = $entry
+    }
+    return $byId
+}
+
+$heteroidentificationById = New-StageIndex $heteroidentification 'heteroidentificacao'
+$medicalExaminationById = New-StageIndex $medicalExamination 'pericia medica'
+$notQualifiedPpp = "$notQualified PPP"
+$notQualifiedPcd = "$notQualified PCD"
+
 $culture = [System.Globalization.CultureInfo]::GetCultureInfo('pt-BR')
 $data = @(
     foreach ($career in ($objective | Group-Object $roleColumn)) {
@@ -57,7 +84,14 @@ $data = @(
                     $writtenScore = $value
                 }
                 $status = ConvertTo-DisplayStatus $entry.$statusColumn
-                [pscustomobject]@{ classificacao = $null; nome = $entry.Nome; nascimento = $entry.Nascimento; objetiva = $score; discursiva = $writtenScore; titulos = $null; final = $null; situacao = $status }
+                $observations = @()
+                if ($heteroidentificationById.ContainsKey($registration) -and $heteroidentificationById[$registration].$stageResultColumn -eq $notQualified) {
+                    $observations += $notQualifiedPpp
+                }
+                if ($medicalExaminationById.ContainsKey($registration) -and $medicalExaminationById[$registration].$stageResultColumn -eq $notQualified) {
+                    $observations += $notQualifiedPcd
+                }
+                [pscustomobject]@{ classificacao = $null; nome = $entry.Nome; nascimento = $entry.Nascimento; objetiva = $score; discursiva = $writtenScore; titulos = $null; final = $null; situacao = $status; observacoes = $observations }
             }
         )
         [pscustomobject]@{ cargo = $career.Name; fase = 'reaplicacao'; resultados = $results }

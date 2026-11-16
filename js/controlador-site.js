@@ -549,6 +549,9 @@ function renderContest() {
   contestBody.replaceChildren();
   filtered.slice(contestPage * positionsPageSize, (contestPage + 1) * positionsPageSize).forEach(item => {
     const row = document.createElement('tr');
+    const observationSuffix = Array.isArray(item.observacoes) && item.observacoes.length
+      ? ` (${item.observacoes.join('; ')})`
+      : '';
     const appointment = appointmentsByCandidate.get(appointmentKey({ fase: career.fase || 'concurso', cargo: career.cargo, nome: item.nome }));
     if (appointment) {
       row.classList.add('appointed');
@@ -567,7 +570,9 @@ function renderContest() {
     [item.classificacao === null ? '—' : `${item.classificacao}º`, item.nome, item.nascimento, contestScoreFormat.format(item.objetiva), item.discursiva === null ? '—' : contestScoreFormat.format(item.discursiva), item.titulos === null ? '—' : contestScoreFormat.format(item.titulos), item.final === null ? '—' : contestScoreFormat.format(item.final), item.situacao].forEach((value, index) => {
       const cell = document.createElement('td');
       if (!hasTitles && index === 5) cell.hidden = true;
-      cell.textContent = value;
+      cell.textContent = index === 7
+        ? `${value}${observationSuffix}`
+        : value;
       row.append(cell);
     });
     contestBody.append(row);

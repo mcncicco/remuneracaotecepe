@@ -120,7 +120,9 @@ for (const career of reapplication) {
     assert.equal(result.final, null);
     assert.match(result.nascimento, /^\d{2}\/\d{2}\/\d{4}$/);
     assert.ok(statuses.has(result.situacao));
-    assert.deepEqual(Object.keys(result).sort(), ['classificacao', 'discursiva', 'final', 'nascimento', 'nome', 'objetiva', 'situacao', 'titulos']);
+    assert.ok(Array.isArray(result.observacoes));
+    assert.ok(result.observacoes.every(observation => ['Não enquadrado PPP', 'Não enquadrado PCD'].includes(observation)));
+    assert.deepEqual(Object.keys(result).sort(), ['classificacao', 'discursiva', 'final', 'nascimento', 'nome', 'objetiva', 'observacoes', 'situacao', 'titulos']);
   });
   const calculated = calculate(career.resultados);
   const scored = calculated.filter(result => result.discursiva !== null);

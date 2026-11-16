@@ -163,6 +163,17 @@ function assertQuotaSources(row, heteroidentification, medicalExamination, filen
   }
 }
 
+function expectedQuotaObservations(inscription, heteroidentification, medicalExamination) {
+  const observations = [];
+  if (heteroidentification.get(inscription)?.[csvColumns.stageResult] === 'Não enquadrado') {
+    observations.push('Não enquadrado PPP');
+  }
+  if (medicalExamination.get(inscription)?.[csvColumns.stageResult] === 'Não enquadrado') {
+    observations.push('Não enquadrado PCD');
+  }
+  return observations;
+}
+
 test('final contest data displayed by the site matches its consolidated CSV', () => {
   const csvRows = readCsv('resultado-concurso-2025.csv');
   const siteRows = flattenCareers(readSiteData('resultado-concurso.js', 'contestData'));
@@ -208,6 +219,7 @@ test('reapplication data displayed by the site matches the CSVs and screening re
     checkEqual(displayed.result.nascimento, row[csvColumns.birth], 'Reapplication birth date');
     checkNumber(displayed.result.objetiva, parseNumber(row['Nota objetiva']), 'Reapplication objective score');
     checkEqual(displayed.result.situacao, canonicalStatus(row[csvColumns.situation]), 'Reapplication situation');
+    checkEqual(JSON.stringify(displayed.result.observacoes), JSON.stringify(expectedQuotaObservations(row[csvColumns.inscription], heteroidentification, medicalExamination)), 'Reapplication quota observations');
     assertQuotaSources(row, heteroidentification, medicalExamination, 'Objective CSV');
 
     const discursive = discursiveByKey.get(key);
