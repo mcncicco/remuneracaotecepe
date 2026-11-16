@@ -1,11 +1,12 @@
 const assert = require('node:assert/strict');
-const { calculate, defaults } = require('./calculator.js');
+const { calculate, defaults } = require('./calculadora-remuneracao.js');
 
 assert.equal(defaults.ceiling, 41845.48);
+assert.equal(defaults.health50, false);
 const results = calculate(defaults);
 assert.deepEqual(results.map(result => result.grade), ['ACE-3', 'ACE-1', 'AGE-1']);
-assert.deepEqual(results.map(result => result.net.toFixed(2)), ['24494.76', '21561.45', '17277.02']);
-assert.deepEqual(results.map(result => result.health.toFixed(2)), ['2645.57', '2379.23', '2379.23']);
+assert.deepEqual(results.map(result => result.net.toFixed(2)), ['23612.91', '20939.73', '16655.30']);
+assert.deepEqual(results.map(result => result.health.toFixed(2)), ['1763.71', '1757.51', '1757.51']);
 const adjusted = calculate({ ...defaults, inflation: true });
 adjusted.forEach((result, index) => {
 	assert.equal(result.basePay, results[index].basePay * 1.05);

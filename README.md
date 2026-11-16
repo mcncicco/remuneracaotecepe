@@ -6,7 +6,9 @@ Site estático independente para comparar a remuneração estimada de Auditor de
 
 Abra `index.html` no navegador. As fontes tipográficas são carregadas do Google Fonts; o site também funciona sem elas.
 
-Para verificar os cálculos e os resultados com Node.js instalado, execute `node js/calculator.test.js` e `node js/concurso.test.js`.
+Para verificar os cálculos e os resultados com Node.js instalado, execute `node js/calculadora-remuneracao.test.js` e `node js/resultados-concurso.test.js`.
+
+Antes de publicar atualizações dos resultados, execute `node --test js/resultados-concurso.test.js js/resultados-csv.test.js`. O teste de CSV compara os dados JavaScript com os CSVs locais de resultados e vagas e valida as situações de cota contra as listas de heteroidentificação e perícia médica. Esses CSVs contêm dados pessoais, são ignorados pelo Git e precisam estar disponíveis localmente para o teste; o teste falha se algum estiver faltando.
 
 ## Estrutura do projeto
 
@@ -35,11 +37,11 @@ A aba de Função por lotação compara exatamente os valores da rubrica do CSV 
 
 O arquivo `csv/vagas-concurso.csv` reúne, por cargo e especialidade, os quantitativos de cargos vagos exibidos no site e, em colunas separadas, as vagas originalmente ofertadas no quadro do item 3.1 do edital de abertura de 2025, conforme imagem fornecida. `edital_total_sem_cr` é a soma das vagas numéricas por modalidade; o edital também prevê cadastro de reserva em todas as especialidades, sem quantidade numérica definida.
 
-Para atualizar os quantitativos com dois CSVs UTF-8 no mesmo formato, execute no PowerShell `./ps1/gerar-estatisticas.ps1 -CsvPath 'csv/vencimentos.csv' -IndenizacoesCsvPath 'csv/indenizacoes.csv'`. O script verifica a correspondência dos registros, lê as legendas de lotações e funções e recria `js/estatisticas-cargos.js`; confira os dados antes de publicá-los. Não inclua os CSVs originais no repositório, pois contêm informações individuais.
+Para atualizar os quantitativos com os CSVs UTF-8 locais, execute no PowerShell `./ps1/gerar-estatisticas.ps1 -CsvPath 'csv/vencimentos-servidores.csv' -IndenizacoesCsvPath 'csv/indenizacoes-servidores.csv'`. O script verifica a correspondência dos registros, lê as legendas de lotações e funções e recria `js/estatisticas-cargos.js`; confira os dados antes de publicá-los. Não inclua os CSVs originais no repositório, pois contêm informações individuais.
 
 Os resultados finais do concurso vêm do PDF fornecido, com homologação parcial datada de 1º de setembro de 2026, abrangendo seis cargos e áreas. O site exibe e filtra a situação dos candidatos como Aprovado, Aprovado PCD, Aprovado PCD/Negro ou Aprovado Negro. Os filtros Aprovado PCD e Aprovado Negro também incluem candidatos Aprovado PCD/Negro. Para os outros quatro cargos, a soma da objetiva definitiva com a discursiva preliminar e a colocação são estimativas, não resultados oficiais; a situação exibida nesses casos vem da lista da objetiva definitiva. O desempate usa a data de nascimento, com o candidato mais velho à frente; com nota e nascimento iguais, a posição é compartilhada. A estimativa não considera outros critérios ou listas de cotas e pode mudar após recursos. Quem não consta na lista fornecida da discursiva permanece sem total ou colocação, o que não significa, por si só, reprovação. Os dados exibidos incluem nomes, datas de nascimento e notas, mas omitem inscrições e marcadores individuais de cotas; consulte os documentos originais para as listas completas.
 
-Para regenerar os dados deste PDF específico, use Node.js e, no PowerShell, ajuste a sessão para UTF-8 com `[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()` e `$OutputEncoding = [System.Text.UTF8Encoding]::new()`. Em seguida, execute `npx --yes pdf-parse@2.4.5 text 'pdf/tcepe-resultado-final-de-aprovados.pdf' --pages 3-14 --format json | node js/gerar-concurso.js`. O script valida as páginas e classificações antes de criar `js/resultado-concurso.js`; confira os dados contra o documento antes de publicá-los.
+Para regenerar os dados deste PDF específico, use Node.js e, no PowerShell, ajuste a sessão para UTF-8 com `[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()` e `$OutputEncoding = [System.Text.UTF8Encoding]::new()`. Em seguida, execute `npx --yes pdf-parse@2.4.5 text 'pdf/tcepe-resultado-final-de-aprovados.pdf' --pages 3-14 --format json | node js/gerar-resultado-concurso.js`. O script valida as páginas e classificações antes de criar `js/resultado-concurso.js`; confira os dados contra o documento antes de publicá-los.
 
 Para exportar o resultado completo em CSV local, acrescente `--csv` ao comando do extrator. A saída `csv/resultado-concurso-2025.csv` inclui inscrições, datas de nascimento e situações de cotas; não a publique sem avaliar esses dados pessoais. O extrator não sobrescreve um CSV existente.
 
@@ -69,7 +71,7 @@ O site pode exibir a quantidade de usuários ativos nos últimos 30 minutos usan
 Para configurar:
 
 1. No Google Cloud, habilite a **Google Analytics Data API** e crie uma conta de serviço com uma chave JSON. No GA4, adicione o e-mail da conta de serviço ao acesso da propriedade com a função **Leitor**. O ID numérico da propriedade mostrado durante a configuração é `564408155`; confirme em **Administrador → Detalhes da propriedade**.
-2. No Cloudflare, crie um Worker e use `cloudflare/analytics-realtime-worker.js` como código. Configure as variáveis `GA4_PROPERTY_ID=564408155` e `ALLOWED_ORIGIN=https://mcncicco.github.io`. Adicione `GOOGLE_SERVICE_ACCOUNT_JSON` como **secret**, com o conteúdo integral do JSON da conta de serviço, e publique o Worker.
+2. No Cloudflare, crie um Worker e use `cloudflare/worker-metricas-tempo-real.js` como código. Configure as variáveis `GA4_PROPERTY_ID=564408155` e `ALLOWED_ORIGIN=https://mcncicco.github.io`. Adicione `GOOGLE_SERVICE_ACCOUNT_JSON` como **secret**, com o conteúdo integral do JSON da conta de serviço, e publique o Worker.
 3. Configure `meta[name="analytics-realtime-endpoint"]` em `index.html` com a URL pública do Worker acrescida de `/api/realtime`. A URL configurada atualmente é `https://remuneracao-tcepe-realtime.marcelocicco.workers.dev/api/realtime`; ela é pública, não uma credencial.
 4. Publique o site no GitHub Pages. O indicador consulta o Worker a cada 15 segundos; o Worker mantém a resposta em cache pelo mesmo período e solicita ao GA4 apenas as métricas agregadas `activeUsers` e `screenPageViews`, sem dimensões ou dados individuais.
 

@@ -23,9 +23,9 @@ assert.deepEqual(ranked.map(result => result.classificacao), [3, 1, 1, 4, null])
 assert.deepEqual(ranked.map(result => result.final), [78.5, 78.5, 78.5, 78, null]);
 assert.equal(sample[0].classificacao, undefined);
 const quotaGroups = [
-  { statuses: new Set(['Aprovado']) },
-  { statuses: new Set(['Aprovado PCD', 'Aprovado PCD/Negro']) },
-  { statuses: new Set(['Aprovado Negro', 'Aprovado PCD/Negro']) }
+  { field: 'vagas_quadro_ac', editalField: 'edital_vagas_ac', label: 'Ampla', statuses: new Set(['Aprovado']) },
+  { field: 'vagas_quadro_pcd', editalField: 'edital_vagas_pcd', label: 'PCD', statuses: new Set(['Aprovado PCD', 'Aprovado PCD/Negro']) },
+  { field: 'vagas_quadro_ppp', editalField: 'edital_vagas_negros', label: 'Negro/PPP', statuses: new Set(['Aprovado Negro', 'Aprovado PCD/Negro']) }
 ];
 const withdrawalCandidates = [
   { classificacao: 1, situacao: 'Aprovado' },
@@ -44,6 +44,37 @@ assert.ok(!withdrawals.has(withdrawalCandidates[3]));
 assert.ok(!withdrawals.has(withdrawalCandidates[4]));
 assert.ok(!withdrawals.has(withdrawalCandidates[5]));
 assert.ok(!findWithdrawals([{ classificacao: null, situacao: 'Aprovado' }], quotaGroups, () => false).size);
+
+const vacancyCandidates = [
+  { classificacao: 1, situacao: 'Aprovado' },
+  { classificacao: 2, situacao: 'Aprovado PCD/Negro' },
+  { classificacao: 3, situacao: 'Aprovado PCD' },
+  { classificacao: 4, situacao: 'Aprovado Negro' }
+];
+const projectedVacancies = ContestRanking.assignVacancyTypes(vacancyCandidates, quotaGroups, {
+  vagas_quadro_ac: 1,
+  edital_vagas_ac: 1,
+  vagas_quadro_pcd: 2,
+  edital_vagas_pcd: 1,
+  vagas_quadro_ppp: 1,
+  edital_vagas_negros: 1
+}, () => false);
+assert.deepEqual(projectedVacancies.get(vacancyCandidates[0]), {
+  types: ['Ampla'],
+  editalTypes: ['Ampla'],
+  additionalTypes: []
+});
+assert.deepEqual(projectedVacancies.get(vacancyCandidates[1]), {
+  types: ['PCD', 'Negro/PPP'],
+  editalTypes: ['PCD', 'Negro/PPP'],
+  additionalTypes: []
+});
+assert.deepEqual(projectedVacancies.get(vacancyCandidates[2]), {
+  types: ['PCD'],
+  editalTypes: [],
+  additionalTypes: ['PCD']
+});
+assert.equal(projectedVacancies.has(vacancyCandidates[3]), false);
 
 const data = vm.runInNewContext(`${readProjectFile('resultado-concurso.js')}\ncontestData`);
 assert.deepEqual(Array.from(data, career => career.resultados.length), [135, 87, 73, 34, 155, 25]);
@@ -107,10 +138,10 @@ for (const career of reapplication) {
   expected.delete(career.cargo);
 }
 assert.deepEqual(countStatuses(reapplication.flatMap(career => career.resultados)), {
-  Aprovado: 2515,
-  'Aprovado Negro': 663,
-  'Aprovado PCD': 173,
-  'Aprovado PCD/Negro': 54
+  Aprovado: 2783,
+  'Aprovado Negro': 479,
+  'Aprovado PCD': 123,
+  'Aprovado PCD/Negro': 20
 });
 assert.equal(expected.size, 0);
 

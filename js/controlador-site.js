@@ -484,30 +484,18 @@ const vacancyTypesByCandidate = new Map();
 
 vacancyData.forEach(vacancy => {
   const specialty = vacancy.especialidade === '—' ? '' : vacancy.especialidade;
-  const vacancyCareer = contestCareers.find(career => normalizeContestKey(career.cargo) === normalizeContestKey(`${vacancy.cargo} ${specialty}`));
-  if (!vacancyCareer) throw new Error(`Cargo sem correspondencia para as vagas: ${vacancy.cargo} / ${vacancy.especialidade}.`);
-
-  vacancyPools.forEach(pool => {
-    const count = vacancy[pool.field];
-    const editalCount = vacancy[pool.editalField];
-    if (!Number.isInteger(count) || count < 0) throw new Error(`Quantidade invalida de vagas: ${pool.field}.`);
-    if (!Number.isInteger(editalCount) || editalCount < 0) throw new Error(`Quantidade invalida de vagas: ${pool.editalField}.`);
-    if (!count) return;
-    const eligible = vacancyCareer.resultados
-      .filter(result => Number.isFinite(result.classificacao) && pool.statuses.has(result.situacao) && !appointmentsByCandidate.has(appointmentKey({ fase: vacancyCareer.fase, cargo: vacancyCareer.cargo, nome: result.nome })))
-      .sort((first, second) => first.classificacao - second.classificacao);
-    const currentBoundary = eligible[Math.min(count, eligible.length) - 1];
-    const editalBoundary = eligible[Math.min(count, editalCount, eligible.length) - 1];
-    if (!currentBoundary) return;
-    eligible.filter(result => result.classificacao <= currentBoundary.classificacao).forEach(result => {
+  const matchingCareers = contestCareers.filter(career => normalizeContestKey(career.cargo) === normalizeContestKey(`${vacancy.cargo} ${specialty}`));
+  if (!matchingCareers.length) throw new Error(`Cargo sem correspondencia para as vagas: ${vacancy.cargo} / ${vacancy.especialidade}.`);
+  matchingCareers.forEach(vacancyCareer => {
+    const assignedVacancies = ContestRanking.assignVacancyTypes(
+      vacancyCareer.resultados,
+      vacancyPools,
+      vacancy,
+      result => appointmentsByCandidate.has(appointmentKey({ fase: vacancyCareer.fase, cargo: vacancyCareer.cargo, nome: result.nome }))
+    );
+    assignedVacancies.forEach((candidateVacancies, result) => {
       const key = appointmentKey({ fase: vacancyCareer.fase, cargo: vacancyCareer.cargo, nome: result.nome });
-      if (!vacancyTypesByCandidate.has(key)) vacancyTypesByCandidate.set(key, { types: [], editalTypes: [], additionalTypes: [] });
-      const candidateVacancies = vacancyTypesByCandidate.get(key);
-      if (!candidateVacancies.types.includes(pool.label)) candidateVacancies.types.push(pool.label);
-      const typeGroup = editalBoundary && result.classificacao <= editalBoundary.classificacao
-        ? candidateVacancies.editalTypes
-        : candidateVacancies.additionalTypes;
-      if (!typeGroup.includes(pool.label)) typeGroup.push(pool.label);
+      vacancyTypesByCandidate.set(key, candidateVacancies);
     });
   });
 });
@@ -550,7 +538,7 @@ function renderContest() {
   headers[4].querySelector('button').textContent = isReapplication ? 'DISCURSIVA PRELIMINAR' : 'DISCURSIVA';
   headers[6].querySelector('button').textContent = isReapplication ? 'NOTA FINAL ESTIMADA' : 'NOTA FINAL';
   document.querySelector('#contest-stage').textContent = isReapplication
-    ? 'Reaplicação: nota final e colocação estimadas pela soma das notas, com desempate por idade. Não são classificação oficial, não consideram cotas ou outros critérios e podem mudar após recursos; candidatos sem nota da discursiva não são classificados. A situação exibida vem da lista da objetiva definitiva.'
+    ? 'Reaplicação: nota final e colocação estimadas pela soma das notas, com desempate por idade; não são classificação oficial e podem mudar após recursos. Candidatos sem nota da discursiva não são classificados. A indicação de vagas é uma projeção separada por fase, baseada nas cotas reconhecidas e nos quantitativos do edital e do quadro atual; não representa nomeação. A situação exibida vem da lista da objetiva definitiva.'
     : 'Resultado final com homologação parcial, conforme documento fornecido de 1º de setembro de 2026.';
   const selectedStatuses = contestStatus.value === 'Aprovado PCD' || contestStatus.value === 'Aprovado Negro'
     ? [contestStatus.value, 'Aprovado PCD/Negro']

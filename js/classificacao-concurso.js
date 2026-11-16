@@ -27,7 +27,33 @@ const ContestRanking = (() => {
       quotaGroups.some((group, index) => group.statuses.has(candidate.situacao) && latestAppointedRanks[index] > candidate.classificacao)
     ));
   }
-  return { calculate, findWithdrawals };
+  function assignVacancyTypes(results, quotaGroups, vacancy, isAppointed) {
+    const vacancyTypes = new Map();
+    quotaGroups.forEach(group => {
+      const count = vacancy[group.field];
+      const editalCount = vacancy[group.editalField];
+      if (!Number.isInteger(count) || count < 0) throw new Error(`Quantidade invalida de vagas: ${group.field}.`);
+      if (!Number.isInteger(editalCount) || editalCount < 0) throw new Error(`Quantidade invalida de vagas: ${group.editalField}.`);
+      if (!count) return;
+      const eligible = results
+        .filter(result => Number.isFinite(result.classificacao) && group.statuses.has(result.situacao) && !isAppointed(result))
+        .sort((first, second) => first.classificacao - second.classificacao);
+      const currentBoundary = eligible[Math.min(count, eligible.length) - 1];
+      const editalBoundary = eligible[Math.min(count, editalCount, eligible.length) - 1];
+      if (!currentBoundary) return;
+      eligible.filter(result => result.classificacao <= currentBoundary.classificacao).forEach(result => {
+        if (!vacancyTypes.has(result)) vacancyTypes.set(result, { types: [], editalTypes: [], additionalTypes: [] });
+        const candidateVacancies = vacancyTypes.get(result);
+        if (!candidateVacancies.types.includes(group.label)) candidateVacancies.types.push(group.label);
+        const typeGroup = editalBoundary && result.classificacao <= editalBoundary.classificacao
+          ? candidateVacancies.editalTypes
+          : candidateVacancies.additionalTypes;
+        if (!typeGroup.includes(group.label)) typeGroup.push(group.label);
+      });
+    });
+    return vacancyTypes;
+  }
+  return { calculate, findWithdrawals, assignVacancyTypes };
 })();
 
 if (typeof module !== 'undefined') module.exports = ContestRanking;

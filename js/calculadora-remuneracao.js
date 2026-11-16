@@ -8,7 +8,7 @@ const SalaryCalculator = (() => {
   const qualifications = [['Nenhuma', 0], ['Especialização', 0.03], ['Mestrado', 0.05], ['Doutorado', 0.07]];
   const functions = [['Nenhuma', 0], ['TC-FGG', 9104.48], ['TC-FGS-1', 3119.86], ['TC-FGS-2', 2227.12], ['TC-FAG-1', 1968.57], ['TC-FAG-2', 1554.14], ['TC-FAG-3', 1243.22], ['TC-FGA-1', 7997.56], ['TC-FGA-2', 6239.82], ['TC-FGA-3', 3119.86], ['TC-FGE-1', 18176.36], ['TC-FGE-2', 15449.95], ['TC-FGE-3', 14541.08], ['TC-FGE-4', 13632.23], ['TC-FGE-5', 13329.28]];
   const locations = [['Sede (Recife / Outros)', 0, 0], ['Insp. Bezerros e Surubim', 0.25, 5180.24], ['Insp. Arcoverde, Garanhuns e Palmares', 0.30, 6679.78], ['Insp. Petrolina', 0.35, 6952.43]];
-  const defaults = { time: 0, qualification: 1, location: 0, position: 0, prevcom: false, oldRegime: true, field: false, health50: true, inflation: false, ceiling: 41845.48, rgps: 8475.55, taxDeduction: 908.73, fieldAmount: 2415.03 };
+  const defaults = { time: 0, qualification: 1, location: 0, position: 0, prevcom: false, oldRegime: true, field: false, health50: false, inflation: false, ceiling: 41845.48, rgps: 8475.55, taxDeduction: 908.73, fieldAmount: 2415.03 };
 
   function calculate(options) {
     return careers.map((career, index) => {
