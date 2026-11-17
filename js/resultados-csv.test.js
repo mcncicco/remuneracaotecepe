@@ -167,9 +167,13 @@ function expectedQuotaObservations(inscription, heteroidentification, medicalExa
   const observations = [];
   if (heteroidentification.get(inscription)?.[csvColumns.stageResult] === 'Não enquadrado') {
     observations.push('Não enquadrado PPP');
+  } else if (heteroidentification.get(inscription)?.[csvColumns.stageResult] === 'Ausente') {
+    observations.push('Ausente Heteroidentificação');
   }
   if (medicalExamination.get(inscription)?.[csvColumns.stageResult] === 'Não enquadrado') {
     observations.push('Não enquadrado PCD');
+  } else if (medicalExamination.get(inscription)?.[csvColumns.stageResult] === 'Ausente') {
+    observations.push('Ausente Perícia PCD');
   }
   return observations;
 }

@@ -457,8 +457,10 @@ const contestSearch = document.querySelector('#contest-search');
 const contestBody = document.querySelector('#contest-body');
 const contestPrev = document.querySelector('#contest-prev');
 const contestNext = document.querySelector('#contest-next');
+const contestPageSizeSelect = document.querySelector('#contest-page-size');
 const contestScoreFormat = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
 let contestPage = 0;
+let contestPageSize = Number(contestPageSizeSelect.value);
 const contestCareers = [
   ...contestData.map(career => ({ ...career, fase: 'concurso', resultados: career.resultados.map(result => ({ ...result })) })),
   ...contestReapplicationData.map(career => ({ ...career, resultados: ContestRanking.calculate(career.resultados) }))
@@ -544,10 +546,10 @@ function renderContest() {
     ? [contestStatus.value, 'Aprovado PCD/Negro']
     : contestStatus.value ? [contestStatus.value] : null;
   const filtered = sortContest(career.resultados.filter(row => (!selectedStatuses || selectedStatuses.includes(row.situacao)) && row.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR').includes(query)));
-  const pages = Math.max(1, Math.ceil(filtered.length / positionsPageSize));
+  const pages = Math.max(1, Math.ceil(filtered.length / contestPageSize));
   contestPage = Math.min(contestPage, pages - 1);
   contestBody.replaceChildren();
-  filtered.slice(contestPage * positionsPageSize, (contestPage + 1) * positionsPageSize).forEach(item => {
+  filtered.slice(contestPage * contestPageSize, (contestPage + 1) * contestPageSize).forEach(item => {
     const row = document.createElement('tr');
     const observationSuffix = Array.isArray(item.observacoes) && item.observacoes.length
       ? ` (${item.observacoes.join('; ')})`
@@ -598,6 +600,11 @@ contestCareer.addEventListener('input', () => {
 });
 contestStatus.addEventListener('input', () => { contestPage = 0; renderContest(); });
 contestSearch.addEventListener('input', () => { contestPage = 0; renderContest(); });
+contestPageSizeSelect.addEventListener('change', () => {
+  contestPageSize = Number(contestPageSizeSelect.value);
+  contestPage = 0;
+  renderContest();
+});
 contestPrev.addEventListener('click', () => { contestPage--; renderContest(); });
 contestNext.addEventListener('click', () => { contestPage++; renderContest(); });
 renderContest();

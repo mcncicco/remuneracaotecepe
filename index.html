@@ -81,6 +81,8 @@
     .positions-pagination button { border: 1px solid var(--line); border-radius: 3px; background: #fff; color: var(--green); padding: 8px 12px; font-size: 11px; font-weight: 700; }
     .positions-pagination button:disabled { color: #aab6ae; cursor: default; }
     .positions-pagination span { color: #728078; font-size: 11px; }
+    .positions-pagination label { color: #728078; font-size: 11px; }
+    .positions-pagination select { border: 1px solid var(--line); border-radius: 3px; background: #fff; color: var(--green); padding: 7px 8px; font-size: 11px; }
     .statistics-panel .positions-note { margin-top: 18px; line-height: 1.7; }
     .competition { padding-top: 60px; }
     .competition h2 { margin: 8px 0 24px; font-size: 22px; }
@@ -123,14 +125,14 @@
   <script defer src="js/nomeacoes-concurso.js?v=20261115-2"></script>
   <script defer src="js/vagas-concurso.js?v=20261115-2"></script>
   <script defer src="js/classificacao-concurso.js?v=20261116-1"></script>
-  <script defer src="js/controlador-site.js?v=20261116-5"></script>
+  <script defer src="js/controlador-site.js?v=20261117-1"></script>
   <script defer src="js/metricas-tempo-real.js?v=20261116-2"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="#inicio" aria-label="Simulador , início"><span class="brand-mark">T<span>.</span></span><span>REMUNERAÇÃO<br><strong></strong></span></a>
-      <nav aria-label="Navegação principal"><a href="#simulador">Simulador</a><a href="#memoria">Memória de cálculo</a><a href="#estatisticas">Estatísticas</a><a href="#concurso-2025">Concurso 2025</a><a href="#fontes">Sobre os dados</a></nav>
+      <nav aria-label="Navegação principal"><a href="#simulador">Simulador</a><a href="#memoria">Memória de cálculo</a><a href="#concurso-2025">Concurso 2025</a><a href="#estatisticas">Estatísticas</a><a href="#fontes">Sobre os dados</a></nav>
       <span class="top-label"><span></span> SIMULAÇÃO INDEPENDENTE</span>
     </div>
   </header>
@@ -176,6 +178,23 @@
         </section>
       </section>
     </div>
+
+    <section class="competition wrap" id="concurso-2025" aria-labelledby="competition-title">
+      <p class="kicker">PROCESSO SELETIVO</p>
+      <h2 id="competition-title">Concurso 2025</h2>
+      <div class="competition-filters">
+        <div class="field"><label for="contest-career">Cargo / Área</label><select id="contest-career"></select></div>
+        <div class="field"><label for="contest-status">Situação</label><select id="contest-status"><option value="">Todas as situações</option><option>Aprovado</option><option>Aprovado PCD</option><option>Aprovado PCD/Negro</option><option>Aprovado Negro</option></select></div>
+        <div class="field"><label for="contest-search">Nome</label><input id="contest-search" type="search" placeholder="Buscar candidato"></div>
+      </div>
+      <p class="competition-stage" id="contest-stage"></p>
+      <p class="appointment-legend"><span aria-hidden="true"></span>Linha azul-clara: nomeado por portaria.<span class="withdrawal-swatch" aria-hidden="true"></span>Linha vermelho-clara: possível desistência.<span class="vacancy-edital-swatch" aria-hidden="true"></span>Linha verde mais escura: não nomeado mas dentro das vagas ofertadas no edital.<span class="vacancy-swatch" aria-hidden="true"></span>Linha verde-clara: não nomeado mas dentro dos cargos vagos existentes.</p>
+      <div class="positions-summary"><p id="contest-count" role="status"></p></div>
+      <div class="table-scroll" tabindex="0" aria-label="Resultados do concurso por cargo"><table class="competition-table"><thead><tr><th scope="col">CLASSIFICAÇÃO</th><th scope="col">NOME</th><th scope="col">NASCIMENTO</th><th scope="col">OBJETIVA</th><th scope="col">DISCURSIVA</th><th scope="col">TÍTULOS</th><th scope="col">NOTA FINAL</th><th scope="col">SITUAÇÃO</th></tr></thead><tbody id="contest-body"></tbody></table></div>
+      <p class="table-hint">Deslize a tabela para ver todas as colunas.</p>
+      <div class="positions-pagination"><button type="button" id="contest-prev">Anterior</button><span id="contest-page"></span><button type="button" id="contest-next">Próxima</button><label for="contest-page-size">Linhas por página</label><select id="contest-page-size"><option value="10" selected>10</option><option value="50">50</option><option value="100">100</option></select></div>
+      <p class="competition-note">Fonte: documentos de resultados fornecidos. Consulte a <a href="https://conhecimento.fgv.br/concursos/tcepe" target="_blank" rel="noopener noreferrer">página do concurso</a> para as publicações, eventuais atualizações e listas completas.</p>
+    </section>
 
     <section class="statistics wrap" id="estatisticas" aria-labelledby="statistics-title">
       <p class="kicker">QUADRO DE PESSOAL</p>
@@ -239,23 +258,6 @@
         <div class="positions-pagination"><button type="button" id="functions-prev">Anterior</button><span id="functions-page"></span><button type="button" id="functions-next">Próxima</button></div>
         <p class="positions-note">Fonte: CSV de consulta de vencimentos e tabela de funções fornecidos. A identificação é estimada por correspondência exata de valor e não confirma a função exercida. O valor de R$ 3.119,86 corresponde tanto a TC-FGS-1 quanto a TC-FGA-3; valores diferentes da tabela ficam como não identificados. Registros com valor zero não são exibidos.</p>
       </div>
-    </section>
-
-    <section class="competition wrap" id="concurso-2025" aria-labelledby="competition-title">
-      <p class="kicker">PROCESSO SELETIVO</p>
-      <h2 id="competition-title">Concurso 2025</h2>
-      <div class="competition-filters">
-        <div class="field"><label for="contest-career">Cargo / Área</label><select id="contest-career"></select></div>
-        <div class="field"><label for="contest-status">Situação</label><select id="contest-status"><option value="">Todas as situações</option><option>Aprovado</option><option>Aprovado PCD</option><option>Aprovado PCD/Negro</option><option>Aprovado Negro</option></select></div>
-        <div class="field"><label for="contest-search">Nome</label><input id="contest-search" type="search" placeholder="Buscar candidato"></div>
-      </div>
-      <p class="competition-stage" id="contest-stage"></p>
-      <p class="appointment-legend"><span aria-hidden="true"></span>Linha azul-clara: nomeado por portaria.<span class="withdrawal-swatch" aria-hidden="true"></span>Linha vermelho-clara: possível desistência.<span class="vacancy-edital-swatch" aria-hidden="true"></span>Linha verde mais escura: não nomeado mas dentro das vagas ofertadas no edital.<span class="vacancy-swatch" aria-hidden="true"></span>Linha verde-clara: não nomeado mas dentro dos cargos vagos existentes.</p>
-      <div class="positions-summary"><p id="contest-count" role="status"></p></div>
-      <div class="table-scroll" tabindex="0" aria-label="Resultados do concurso por cargo"><table class="competition-table"><thead><tr><th scope="col">CLASSIFICAÇÃO</th><th scope="col">NOME</th><th scope="col">NASCIMENTO</th><th scope="col">OBJETIVA</th><th scope="col">DISCURSIVA</th><th scope="col">TÍTULOS</th><th scope="col">NOTA FINAL</th><th scope="col">SITUAÇÃO</th></tr></thead><tbody id="contest-body"></tbody></table></div>
-      <p class="table-hint">Deslize a tabela para ver todas as colunas.</p>
-      <div class="positions-pagination"><button type="button" id="contest-prev">Anterior</button><span id="contest-page"></span><button type="button" id="contest-next">Próxima</button></div>
-      <p class="competition-note">Fonte: documentos de resultados fornecidos. Consulte a <a href="https://conhecimento.fgv.br/concursos/tcepe" target="_blank" rel="noopener noreferrer">página do concurso</a> para as publicações, eventuais atualizações e listas completas.</p>
     </section>
 
     <section class="about wrap" id="fontes"><div><p class="kicker">TRANSPARÊNCIA</p><h2>Sobre esta simulação<span>.</span></h2></div><div class="about-copy"><p>Os valores e as fórmulas foram reproduzidos da planilha <strong>Simulador TCE PE R6</strong>, incluindo suas tabelas de progressão e parâmetros de cálculo. A aba “Dados” da planilha não informa links para fontes legais.</p><p>Esta é uma ferramenta independente e informativa, sem vínculo institucional e gerada por IA. Os valores podem estar desatualizados e não substituem a consulta às normas e à folha de pagamento. No regime antigo, a planilha exibe o abate-teto, mas não o soma aos descontos; também não deduz a PREVCOM da base do IR.</p></div></section>

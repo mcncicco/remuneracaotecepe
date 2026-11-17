@@ -66,6 +66,10 @@ $heteroidentificationById = New-StageIndex $heteroidentification 'heteroidentifi
 $medicalExaminationById = New-StageIndex $medicalExamination 'pericia medica'
 $notQualifiedPpp = "$notQualified PPP"
 $notQualifiedPcd = "$notQualified PCD"
+$periciaLabel = 'Per' + [char]0x00ED + 'cia'
+$heteroidentificationLabel = 'Heteroidentifica' + [char]0x00E7 + [char]0x00E3 + 'o'
+$absentPpp = "Ausente $heteroidentificationLabel"
+$absentPcd = "Ausente $periciaLabel PCD"
 
 $culture = [System.Globalization.CultureInfo]::GetCultureInfo('pt-BR')
 $data = @(
@@ -85,11 +89,15 @@ $data = @(
                 }
                 $status = ConvertTo-DisplayStatus $entry.$statusColumn
                 $observations = @()
-                if ($heteroidentificationById.ContainsKey($registration) -and $heteroidentificationById[$registration].$stageResultColumn -eq $notQualified) {
-                    $observations += $notQualifiedPpp
+                if ($heteroidentificationById.ContainsKey($registration)) {
+                    $stageResult = $heteroidentificationById[$registration].$stageResultColumn
+                    if ($stageResult -eq $notQualified) { $observations += $notQualifiedPpp }
+                    elseif ($stageResult -eq 'Ausente') { $observations += $absentPpp }
                 }
-                if ($medicalExaminationById.ContainsKey($registration) -and $medicalExaminationById[$registration].$stageResultColumn -eq $notQualified) {
-                    $observations += $notQualifiedPcd
+                if ($medicalExaminationById.ContainsKey($registration)) {
+                    $stageResult = $medicalExaminationById[$registration].$stageResultColumn
+                    if ($stageResult -eq $notQualified) { $observations += $notQualifiedPcd }
+                    elseif ($stageResult -eq 'Ausente') { $observations += $absentPcd }
                 }
                 [pscustomobject]@{ classificacao = $null; nome = $entry.Nome; nascimento = $entry.Nascimento; objetiva = $score; discursiva = $writtenScore; titulos = $null; final = $null; situacao = $status; observacoes = $observations }
             }
