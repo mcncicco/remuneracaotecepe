@@ -547,10 +547,22 @@ function renderContest() {
   const hasTitles = career.cargo === 'PROCURADOR DO TRIBUNAL DE CONTAS';
   const headers = document.querySelectorAll('.competition-table thead th');
   headers[5].hidden = !hasTitles;
-  headers[0].querySelector('button').textContent = isReapplication ? 'COLOCAÇÃO ESTIMADA' : 'CLASSIFICAÇÃO';
-  headers[3].querySelector('button').textContent = isReapplication ? 'OBJETIVA DEFINITIVA' : 'OBJETIVA';
-  headers[4].querySelector('button').textContent = isReapplication ? 'DISCURSIVA PRELIMINAR' : 'DISCURSIVA';
-  headers[6].querySelector('button').textContent = isReapplication ? 'NOTA FINAL ESTIMADA' : 'NOTA FINAL';
+  const headerLabels = [
+    ['Class.', isReapplication ? 'Colocação estimada' : 'Classificação'],
+    ['Nome.', 'Nome do candidato'],
+    ['Nasc.', 'Data de nascimento'],
+    ['Obj.', isReapplication ? 'Nota objetiva definitiva' : 'Nota objetiva'],
+    ['Dis.', isReapplication ? 'Nota discursiva preliminar' : 'Nota discursiva'],
+    ['Tit.', 'Nota de títulos'],
+    ['N. Fin.', isReapplication ? 'Nota final estimada' : 'Nota final'],
+    ['Situação', 'Situação do candidato']
+  ];
+  headerLabels.forEach(([label, description], index) => {
+    const button = headers[index].querySelector('button');
+    button.textContent = label;
+    button.title = description;
+    button.setAttribute('aria-label', `${description}; ordenar`);
+  });
   document.querySelector('#contest-stage').textContent = isReapplication
     ? 'Reaplicação: nota final e colocação estimadas pela soma das notas, com desempate por idade; não são classificação oficial e podem mudar após recursos. Candidatos sem nota da discursiva não são classificados. A indicação de vagas é uma projeção separada por fase, baseada nas cotas reconhecidas e nos quantitativos do edital e do quadro atual; não representa nomeação. A situação exibida vem da lista da objetiva definitiva.'
     : 'Resultado final com homologação parcial, conforme documento fornecido de 1º de setembro de 2026.';
