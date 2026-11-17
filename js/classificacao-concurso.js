@@ -17,6 +17,9 @@ const ContestRanking = (() => {
     });
     return updated;
   }
+  function sortCareers(careers) {
+    return [...careers].sort((first, second) => first.cargo.localeCompare(second.cargo, 'pt-BR'));
+  }
   function findOtherPlacements(careers, selectedCareer, candidate) {
     const candidateName = candidate.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR').replace(/\s+/g, ' ').trim();
     return careers.flatMap(career => {
@@ -65,7 +68,7 @@ const ContestRanking = (() => {
     });
     return vacancyTypes;
   }
-  return { calculate, findOtherPlacements, findWithdrawals, assignVacancyTypes };
+  return { calculate, findOtherPlacements, findWithdrawals, assignVacancyTypes, sortCareers };
 })();
 
 if (typeof module !== 'undefined') module.exports = ContestRanking;

@@ -462,8 +462,8 @@ const contestScoreFormat = new Intl.NumberFormat('pt-BR', { maximumFractionDigit
 let contestPage = 0;
 let contestPageSize = Number(contestPageSizeSelect.value);
 const contestCareers = [
-  ...contestData.map(career => ({ ...career, fase: 'concurso', resultados: career.resultados.map(result => ({ ...result })) })),
-  ...contestReapplicationData.map(career => ({ ...career, resultados: ContestRanking.calculate(career.resultados) }))
+  ...ContestRanking.sortCareers(contestData.map(career => ({ ...career, fase: 'concurso', resultados: career.resultados.map(result => ({ ...result })) }))),
+  ...ContestRanking.sortCareers(contestReapplicationData.map(career => ({ ...career, resultados: ContestRanking.calculate(career.resultados) })))
 ];
 const normalizeContestName = name => name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR');
 const normalizeContestKey = value => normalizeContestName(value).replace(/[^A-Z0-9]+/g, ' ').trim();

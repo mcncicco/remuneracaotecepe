@@ -140,6 +140,10 @@ for (const career of reapplication) {
   expected.delete(career.cargo);
 }
 const rankedReapplication = reapplication.map(career => ({ ...career, resultados: calculate(career.resultados) }));
+const sortedOfficialCareers = ContestRanking.sortCareers(data);
+const sortedReapplicationCareers = ContestRanking.sortCareers(rankedReapplication);
+assert.deepEqual(Array.from(sortedOfficialCareers, career => career.cargo), Array.from(data, career => career.cargo).sort((first, second) => first.localeCompare(second, 'pt-BR')));
+assert.deepEqual(Array.from(sortedReapplicationCareers, career => career.cargo), Array.from(rankedReapplication, career => career.cargo).sort((first, second) => first.localeCompare(second, 'pt-BR')));
 const allRankedCareers = [
   ...data.map(career => ({ ...career, fase: 'concurso' })),
   ...rankedReapplication
