@@ -469,6 +469,18 @@ const normalizeContestName = name => name.normalize('NFD').replace(/[\u0300-\u03
 const normalizeContestKey = value => normalizeContestName(value).replace(/[^A-Z0-9]+/g, ' ').trim();
 const appointmentKey = appointment => `${appointment.fase}|${appointment.cargo}|${normalizeContestName(appointment.nome)}`;
 const appointmentsByCandidate = new Map(appointedCandidates.map(appointment => [appointmentKey(appointment), appointment]));
+const contestCareerLabels = new Map([
+  ['ANALISTA DE CONTROLE EXTERNO-CONTAS PÚBLICAS', 'Analista - Contas Públicas'],
+  ['ANALISTA DE CONTROLE EXTERNO-OBRAS PÚBLICAS', 'Analista - Obras Públicas'],
+  ['ANALISTA DE CONTROLE EXTERNO-TECNOLOGIA DA INFORMAÇÃO', 'Analista - Tecnologia da Informação'],
+  ['ANALISTA DE GESTÃO-ADMINISTRAÇÃO', 'Analista de Gestão - Administração'],
+  ['ANALISTA DE GESTÃO-JULGAMENTO', 'Analista de Gestão - Julgamento'],
+  ['AUDITOR DE CONTROLE EXTERNO-CONTAS PÚBLICAS', 'Auditor - Contas Públicas'],
+  ['AUDITOR DE CONTROLE EXTERNO-CONTAS PÚBLICAS DE SAÚDE', 'Auditor - Contas Públicas de Saúde'],
+  ['AUDITOR DE CONTROLE EXTERNO-OBRAS PÚBLICAS', 'Auditor - Obras Públicas'],
+  ['AUDITOR DE CONTROLE EXTERNO-TECNOLOGIA DA INFORMAÇÃO', 'Auditor - Tecnologia da Informação'],
+  ['PROCURADOR DO TRIBUNAL DE CONTAS', 'Procurador do Tribunal de Contas']
+]);
 const vacancyPools = [
   { field: 'vagas_quadro_ac', editalField: 'edital_vagas_ac', label: 'Ampla', statuses: new Set(['Aprovado']) },
   { field: 'vagas_quadro_pcd', editalField: 'edital_vagas_pcd', label: 'PCD', statuses: new Set(['Aprovado PCD', 'Aprovado PCD/Negro']) },
@@ -551,9 +563,12 @@ function renderContest() {
   contestBody.replaceChildren();
   filtered.slice(contestPage * contestPageSize, (contestPage + 1) * contestPageSize).forEach(item => {
     const row = document.createElement('tr');
-    const observationSuffix = Array.isArray(item.observacoes) && item.observacoes.length
-      ? ` (${item.observacoes.join('; ')})`
-      : '';
+    const situationNotes = [
+      ...(Array.isArray(item.observacoes) ? item.observacoes.map(observation => `(${observation})`) : []),
+      ...ContestRanking.findOtherPlacements(contestCareers, career, item).map(placement =>
+        `(${placement.classificacao}º ${contestCareerLabels.get(placement.cargo) || placement.cargo})`
+      )
+    ];
     const appointment = appointmentsByCandidate.get(appointmentKey({ fase: career.fase || 'concurso', cargo: career.cargo, nome: item.nome }));
     if (appointment) {
       row.classList.add('appointed');
@@ -572,9 +587,12 @@ function renderContest() {
     [item.classificacao === null ? '—' : `${item.classificacao}º`, item.nome, item.nascimento, contestScoreFormat.format(item.objetiva), item.discursiva === null ? '—' : contestScoreFormat.format(item.discursiva), item.titulos === null ? '—' : contestScoreFormat.format(item.titulos), item.final === null ? '—' : contestScoreFormat.format(item.final), item.situacao].forEach((value, index) => {
       const cell = document.createElement('td');
       if (!hasTitles && index === 5) cell.hidden = true;
-      cell.textContent = index === 7
-        ? `${value}${observationSuffix}`
-        : value;
+      cell.textContent = value;
+      if (index === 7) {
+        situationNotes.forEach(note => {
+          cell.append(document.createElement('br'), document.createTextNode(note));
+        });
+      }
       row.append(cell);
     });
     contestBody.append(row);

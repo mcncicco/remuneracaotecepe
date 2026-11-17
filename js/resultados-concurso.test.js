@@ -139,6 +139,22 @@ for (const career of reapplication) {
   });
   expected.delete(career.cargo);
 }
+const rankedReapplication = reapplication.map(career => ({ ...career, resultados: calculate(career.resultados) }));
+const allRankedCareers = [
+  ...data.map(career => ({ ...career, fase: 'concurso' })),
+  ...rankedReapplication
+];
+const leonCareer = rankedReapplication.find(career => career.cargo === 'ANALISTA DE GESTÃO-ADMINISTRAÇÃO');
+const leon = leonCareer.resultados.find(result => result.nome === 'Léon Denizard Almeida Maia de Oliveira');
+assert.deepEqual(JSON.parse(JSON.stringify(ContestRanking.findOtherPlacements(rankedReapplication, leonCareer, leon))), [
+  { cargo: 'AUDITOR DE CONTROLE EXTERNO-CONTAS PÚBLICAS', classificacao: 11 },
+  { cargo: 'ANALISTA DE CONTROLE EXTERNO-CONTAS PÚBLICAS', classificacao: 18 }
+]);
+const analystTechnology = allRankedCareers.find(career => career.cargo === 'ANALISTA DE CONTROLE EXTERNO-TECNOLOGIA DA INFORMAÇÃO');
+const andre = analystTechnology.resultados.find(result => result.nome === 'André Vitor de Almeida Palhares');
+assert.deepEqual(JSON.parse(JSON.stringify(ContestRanking.findOtherPlacements(allRankedCareers, analystTechnology, andre))), [
+  { cargo: 'AUDITOR DE CONTROLE EXTERNO-TECNOLOGIA DA INFORMAÇÃO', classificacao: 1 }
+]);
 assert.deepEqual(countStatuses(reapplication.flatMap(career => career.resultados)), {
   Aprovado: 2783,
   'Aprovado Negro': 479,

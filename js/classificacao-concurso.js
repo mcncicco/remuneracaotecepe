@@ -17,6 +17,18 @@ const ContestRanking = (() => {
     });
     return updated;
   }
+  function findOtherPlacements(careers, selectedCareer, candidate) {
+    const candidateName = candidate.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR').replace(/\s+/g, ' ').trim();
+    return careers.flatMap(career => {
+      if (career.cargo === selectedCareer.cargo) return [];
+      const placement = career.resultados.find(result =>
+        result.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR').replace(/\s+/g, ' ').trim() === candidateName &&
+        Number.isFinite(result.classificacao) &&
+        result.situacao.startsWith('Aprovado')
+      );
+      return placement ? [{ cargo: career.cargo, classificacao: placement.classificacao }] : [];
+    }).sort((first, second) => first.classificacao - second.classificacao);
+  }
   function findWithdrawals(results, quotaGroups, isAppointed) {
     const latestAppointedRanks = quotaGroups.map(group => results.reduce((latest, candidate) => {
       if (!Number.isFinite(candidate.classificacao) || !group.statuses.has(candidate.situacao) || !isAppointed(candidate)) return latest;
@@ -53,7 +65,7 @@ const ContestRanking = (() => {
     });
     return vacancyTypes;
   }
-  return { calculate, findWithdrawals, assignVacancyTypes };
+  return { calculate, findOtherPlacements, findWithdrawals, assignVacancyTypes };
 })();
 
 if (typeof module !== 'undefined') module.exports = ContestRanking;
