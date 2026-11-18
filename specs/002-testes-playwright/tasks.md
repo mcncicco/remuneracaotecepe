@@ -74,8 +74,8 @@ permite validar a revisão enquanto o site da `main` permanece na raiz.
 - [x] T023 [US3] Criar `scripts/verify-pages-staging.mjs` para verificar, sem registrar conteúdo da página, que a URL de preview serve os recursos necessários e não serve as pastas e arquivos locais excluídos.
 - [ ] T024 [US3] Configurar a proteção da branch de produção no GitHub para exigir pull request, ao menos uma aprovação autorizada e os checks do CI antes do merge; descartar aprovações obsoletas e desabilitar envios diretos e bypass das regras.
 - [x] T025 [US3] Documentar a confirmação de validação local no pull request e exigir aprovação autorizada para mudanças de resultados ou de classificação desconhecida; descartar aprovações obsoletas após novos commits e nunca solicitar CSVs como prova.
-- [ ] T026 [US3] Configurar Pages via GitHub Actions e publicar o conteúdo da branch `adocao-spec-kit` em `/adocao-spec-kit/`, mantendo a raiz construída da `main`.
-- [ ] T027 [US3] Validar a URL de preview da branch, incluindo recursos necessários, exclusões do `_config.yml` e preservação da página da `main` na raiz.
+- [x] T026 [US3] Configurar Pages via GitHub Actions e publicar o conteúdo da branch `adocao-spec-kit` em `/adocao-spec-kit/`, mantendo a raiz construída da `main`.
+- [x] T027 [US3] Validar a URL de preview da branch, incluindo recursos necessários, exclusões do `_config.yml` e preservação da página da `main` na raiz.
 - [x] T028 [US3] Atualizar `README.md` e `specs/002-testes-playwright/quickstart.md` para documentar Pages via Actions, raiz construída da `main`, preview em `/adocao-spec-kit/`, proteção da branch e validação local.
 - [ ] T029 [US3] Validar em ambiente de teste que uma falha de CI bloqueia o merge, que mudanças em resultados exigem validação local e aprovação autorizada para o SHA atual, e que a publicação de preview mantém o conteúdo da `main` na raiz.
 - [ ] T030 [US3] Confirmar no GitHub a origem Actions do Pages, as regras efetivas da branch e a publicação das duas árvores; manter a produção inalterada se testes ou proteções não puderem ser comprovados.
