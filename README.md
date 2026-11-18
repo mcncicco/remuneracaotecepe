@@ -6,9 +6,43 @@ Site estático independente para comparar a remuneração estimada de Auditor de
 
 Abra `index.html` no navegador. As fontes tipográficas são carregadas do Google Fonts; o site também funciona sem elas.
 
-Para verificar os cálculos e os resultados com Node.js instalado, execute `node js/calculadora-remuneracao.test.js` e `node js/resultados-concurso.test.js`.
+Para instalar as ferramentas e executar os testes de interface, use Node.js LTS:
 
-Antes de publicar atualizações dos resultados, execute `node --test js/resultados-concurso.test.js js/resultados-csv.test.js`. O teste de CSV compara os dados JavaScript com os CSVs locais de resultados e vagas e valida as situações de cota contra as listas de heteroidentificação e perícia médica. Esses CSVs contêm dados pessoais, são ignorados pelo Git e precisam estar disponíveis localmente para o teste; o teste falha se algum estiver faltando.
+```powershell
+npm ci
+npx playwright install chromium
+npm run test:e2e
+```
+
+O Playwright roda Chromium em desktop e em viewport móvel, com dados fictícios e
+serviços externos interceptados. O servidor local de teste não serve os arquivos
+reais de candidatos nem arquivos fora da lista pública do site.
+
+Para executar os testes Node localmente, use `npm run test:node`. Ele inclui os
+testes de cálculo, resultados, classificação de alterações e servidor de teste.
+O teste que valida CSVs de origem continua sendo uma verificação local separada:
+antes de publicar atualizações dos resultados, execute
+`node --test js/resultados-concurso.test.js js/resultados-csv.test.js`. Esses CSVs
+contêm dados pessoais, são ignorados pelo Git e precisam estar disponíveis
+localmente; não os anexe nem compartilhe saídas brutas de falhas.
+
+No GitHub Actions, `npm run test:ci` executa os testes Node com saída bruta
+suprimida e a suíte Playwright. Pull requests executam testes, mas não publicam.
+Em pushes para `main` ou `adocao-spec-kit`, depois dos testes, o workflow publica
+um artefato combinado no GitHub Pages: `main` permanece na raiz e a branch
+`adocao-spec-kit` fica em `/adocao-spec-kit/`. A página da raiz é construída
+separadamente a partir de `main`.
+
+Em pull requests, a esteira também informa se a alteração exige validação local
+dos resultados. A classificação é conservadora e não imprime os caminhos
+alterados; mudanças nos dados, geradores ou caminhos desconhecidos devem ser
+validadas localmente e confirmadas por pessoa autorizada para o SHA revisado.
+Essa indicação ainda depende da configuração de proteção da branch no GitHub
+para bloquear merges sem a aprovação necessária.
+
+O teste de CSV compara os dados JavaScript com os CSVs locais de resultados e
+vagas e valida as situações de cota contra as listas de heteroidentificação e
+perícia médica; ele falha se algum arquivo estiver faltando.
 
 ## Estrutura do projeto
 
@@ -16,8 +50,41 @@ Antes de publicar atualizações dos resultados, execute `node --test js/resulta
 - `js/` contém os códigos JavaScript, dados do site, geradores e testes.
 - `css/` contém as folhas de estilo.
 - `ps1/` contém os scripts do PowerShell.
+- `tests/` contém os testes de navegador e fixtures fictícias.
+- `scripts/` contém utilitários seguros para CI e validação de staging.
+- `package.json` e `package-lock.json` declaram as ferramentas de teste.
 - `csv/` contém os CSVs de dados utilizados pelo projeto.
 - `pdf/` contém os PDFs de origem locais; os PDFs e CSVs com dados pessoais são ignorados pelo Git e não são publicados.
+- `.specify/` contém a configuração, os modelos e a constituição do Spec Kit.
+- `.github/skills/` contém as instruções do Spec Kit para o GitHub Copilot.
+
+## Desenvolvimento orientado por especificações
+
+O projeto usa o [Spec Kit](https://github.com/github/spec-kit) com GitHub
+Copilot. A constituição inicial em `.specify/memory/constitution.md` é uma
+proposta para revisão e registra os cuidados com cálculos, dados e publicação.
+A configuração não altera o funcionamento do site nem exige reorganizar seu código.
+
+Para uma nova alteração, abra o projeto no VS Code e execute no chat do Copilot,
+revisando cada etapa antes da seguinte:
+
+1. `/speckit-specify` — descrever a mudança e seus critérios de aceitação.
+2. `/speckit-clarify` — esclarecer dúvidas, quando necessário.
+3. `/speckit-plan` e `/speckit-tasks` — planejar e dividir a implementação.
+4. `/speckit-analyze` — conferir a consistência dos artefatos.
+5. `/speckit-implement` e `/speckit-converge` — implementar e verificar.
+
+Repita implementação e convergência se forem identificadas tarefas pendentes.
+As especificações de funcionalidades são criadas em `specs/`; não é necessário
+documentar retroativamente todo o sistema. Não inclua dados pessoais ou segredos
+nesses arquivos: eles podem ser publicados junto com o repositório ou o site.
+Após alterações, execute os testes aplicáveis descritos em **Executar** e revise
+o diff antes de publicar.
+
+O projeto foi inicializado com scripts Python para evitar depender da política de
+execução de scripts PowerShell do Windows. O Spec Kit exige Python 3.11 ou superior
+para sua CLI; os comandos gerados usam `python3` para executar seus scripts. Se as
+skills não aparecerem no Copilot, reabra o projeto ou reinicie o VS Code.
 
 ## Dados e limitações
 
@@ -59,10 +126,23 @@ Na seção do concurso, nomeados são destacados em azul. Candidatos não nomead
 
 Ao alterar os arquivos JavaScript ou CSS, atualize também o valor de `v` nas respectivas referências em `index.html`, para que navegadores não reutilizem versões antigas em cache.
 
-1. Envie os arquivos deste diretório para o repositório `mcncicco/remuneracaotecepe` no GitHub.
-2. No repositório, abra **Settings > Pages**.
-3. Em **Build and deployment**, selecione **Deploy from a branch**, escolha a branch principal e a pasta `/ (root)` e salve.
-4. Após a publicação, acesse `https://mcncicco.github.io/remuneracaotecepe/`.
+1. No repositório `mcncicco/remuneracaotecepe`, abra **Settings > Pages**.
+2. Em **Build and deployment > Source**, selecione **GitHub Actions**.
+3. O workflow executa os testes antes de publicar. Em pushes para `main`, a
+   raiz continua sendo construída a partir de `main`; em pushes para
+   `adocao-spec-kit`, o preview é atualizado em
+   `https://mcncicco.github.io/remuneracaotecepe/adocao-spec-kit/`.
+4. A URL existente `https://mcncicco.github.io/remuneracaotecepe/` continua
+   sendo a versão da `main`. O artefato de Pages é compartilhado, mas os dois
+   diretórios são construídos de fontes distintas.
+
+Pull requests não publicam. Antes de integrar alterações à branch publicada,
+a proteção da branch ainda deverá exigir pull request e checks aprovados, sem
+permitir envios diretos ou bypass que contornem a esteira. O Pages permanece
+como hospedagem, mas sua origem de publicação passa de branch para o workflow
+do Actions para permitir a raiz da `main` e o preview em um subdiretório.
+`scripts/verify-pages-staging.mjs` verifica os recursos e exclusões do preview
+depois que ele estiver publicado.
 
 ## Usuários ativos em tempo real
 

@@ -7,3 +7,12 @@
 /csv/indenizacoes-servidores.csv
 /csv/sc_csv_*.csv
 /pdf/*.pdf
+/node_modules/
+/__pycache__/
+*.py[cod]
+/test-results/
+/playwright-report/
+*.log
+/dist/
+/.env
+.env*

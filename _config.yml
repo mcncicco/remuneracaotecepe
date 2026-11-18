@@ -1,0 +1,20 @@
+exclude:
+  - .github
+  - .git
+  - .specify
+  - README.md
+  - "*.md"
+  - csv
+  - package-lock.json
+  - package.json
+  - pdf
+  - playwright.config.js
+  - ps1
+  - scripts
+  - specs
+  - test-results
+  - tests
+  - node_modules
+  - js/*.test.js
+  - js/gerar-*.js
+  - "*.log"

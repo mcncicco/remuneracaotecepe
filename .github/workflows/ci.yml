@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+      - adocao-spec-kit
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Classify changes requiring local result validation
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/classify-results-changes.mjs "$BASE_SHA" "$HEAD_SHA"
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run privacy-safe Node tests and Playwright
+        run: npm run test:ci
+
+  build-pages:
+    if: github.event_name == 'push'
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pages: write
+    steps:
+      - name: Check out production source
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: sources/main
+      - name: Check out preview source
+        uses: actions/checkout@v4
+        with:
+          ref: adocao-spec-kit
+          path: sources/preview
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Build main site at the Pages root
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./sources/main
+          destination: ./_site
+      - name: Build branch preview under its branch path
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./sources/preview
+          destination: ./_site/adocao-spec-kit
+      - name: Verify combined Pages artifact
+        run: |
+          test -f _site/index.html
+          test -f _site/adocao-spec-kit/index.html
+          test -f _site/adocao-spec-kit/css/styles.css
+          cmp -s sources/main/index.html _site/index.html
+          for path in .github .specify specs tests scripts csv pdf package.json package-lock.json; do
+            if test -e "_site/adocao-spec-kit/$path"; then
+              echo "Preview artifact contains excluded path: $path"
+              exit 1
+            fi
+          done
+      - name: Upload combined Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./_site
+
+  deploy-pages:
+    if: github.event_name == 'push'
+    needs: build-pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy combined site
+        id: deployment
+        uses: actions/deploy-pages@v4

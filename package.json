@@ -1,0 +1,14 @@
+{
+  "name": "remuneracao-tcepe",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:node": "node --test js/calculadora-remuneracao.test.js js/resultados-concurso.test.js tests/results-change-classifier.test.mjs tests/server.test.mjs tests/run-node-tests-safe.test.mjs",
+    "test:node:ci": "node scripts/run-node-tests-safe.mjs",
+    "test:ci": "npm run test:node:ci && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1"
+  }
+}
